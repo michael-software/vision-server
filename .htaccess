@@ -1,0 +1,3 @@
+<Files ./ajax.php>
+	XSendFile on
+</Files>

@@ -1,0 +1,477 @@
+<html>
+	<head>
+		<style>
+		#loader
+		{
+			position: fixed;
+			top: 0px;
+			left: 0px;
+			right: 0px;
+			bottom: 0px;
+			
+			width: 100%;
+			height: 100%;
+			
+			z-index: 2;
+			
+			margin: 0;
+			padding: 0;
+			
+			padding-top: 10px;
+			
+			background-color: #FBFBFB;
+			
+			cursor: default;
+		}
+		
+		#loader.loaded {
+			position: fixed;
+			top: 0px;
+			left: 0px;
+			bottom: 0px;
+			
+			width: 125px;
+			height: 100%;
+			
+			margin-bottom: 65px;
+			
+			overflow: hidden;
+			
+			-webkit-animation: slideToMenu 1s ease;
+			-moz-animation: slideToMenu 1s ease;
+			animation: slideToMenu 1s ease;
+		}
+		
+		#menu {
+			display: none;
+		}
+		
+		#loader.loaded #menu {
+			position: fixed;
+			
+			top: 5px;
+			left: 0;
+			bottom: 70px;
+			
+			overflow: hidden;
+			overflow-y: auto;
+			
+			display: block;
+			
+			width: 125px;
+			
+			border: none;
+			
+			font-family: "Courier New", Courier, monospace;
+			font-weight: bold;
+			
+			text-align: center;
+			
+			-webkit-animation: fadeIn 1s ease;
+			-moz-animation: fadeIn 1s ease;
+			animation: fadeIn 1s ease;
+		}
+		
+		#loader.loaded #loading-status {
+			display: none;
+		}
+		
+		#loader.loaded #infinity {
+			position: fixed;
+			
+			top: 100%;
+			bottom: 50px;
+			left: 10px;
+			
+			width: 106px;
+			height: 50px;
+			
+			margin: 0;
+			margin-top: -60px;
+			
+			-webkit-animation: slideIconMenu 1s ease;
+			-moz-animation: slideIconMenu 1s ease;
+			animation: slideIconMenu 1s ease;
+		}
+		
+		#loader.loaded #infinity:before, #loader.loaded #infinity:after {
+			width: 30px;
+			height: 30px;
+			border: 10px solid #FF0000;
+			
+			-webkit-animation: scaleIconMenu 1s ease;
+			-moz-animation: scaleIconMenu 1s ease;
+			animation: scaleIconMenu 1s ease;
+		}
+		
+		#loading-status {
+			position: fixed;
+			
+			top: 50%;
+			left: 50%;
+			
+			width: 500px;
+			height: 200px;
+			
+			margin-top: 200px;
+			margin-left: -250px;
+			
+			font-family: "Courier New", Courier, monospace;
+			font-weight: bolder;
+			font-size: 50px;
+			
+			text-align: center;
+			color: #000000;
+		}
+		
+		#login {
+			display: table-cell;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			margin-top: -157px;
+			margin-left: -332px;
+			width: 650px;
+			height: 300px;
+			
+			padding: 7px;
+			
+			background-color: #F8F8F8;
+			
+			font-family: Arial;
+			font-size: 20px;
+			text-align: center;
+			
+			box-shadow: 0px 0px 5px #AAAAAA;
+			
+			z-index: 3;
+		}
+		
+		#login input {
+			font-family: Arial;
+			font-size: 20px;
+		}
+		
+		#infinity {
+			position: fixed;
+			
+			top: 50%;
+			left: 50%;
+			
+			width: 642px; /*212*/
+			height: 300px; /*100*/
+			
+			margin-top: -150px;
+			margin-left: -321px;
+			
+			z-index: 3;
+		}
+
+		#infinity:before,#infinity:after {
+			content: "";
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 180px;
+			height: 180px;
+			border: 60px solid #FFFFFF;
+			-moz-border-radius: 100% 100% 0 100%;
+			border-radius: 100% 100% 0 100%;
+			-webkit-transform: rotate(-45deg);
+			-moz-transform: rotate(-45deg);
+			-ms-transform: rotate(-45deg);
+			-o-transform: rotate(-45deg);
+			transform: rotate(-45deg);
+			
+			-webkit-animation: pulse 4s linear infinite;
+			-moz-animation: pulse 4s linear infinite;
+			animation: pulse 4s linear infinite;
+		}
+
+		#infinity:after {
+			left: auto;
+			right: 0;
+			-moz-border-radius: 100% 100% 100% 0; 
+			border-radius: 100% 100% 100% 0;
+			-webkit-transform: rotate(45deg);
+			-moz-transform: rotate(45deg);
+			-ms-transform: rotate(45deg);
+			-o-transform: rotate(45deg);
+			transform: rotate(45deg);
+		}
+		
+		@-moz-keyframes pulse {
+			0% { border: 60px solid #FF0000; }
+			50% { border: 60px solid #000000; }
+			100% { border: 60px solid #FF0000; }
+		}
+		@-webkit-keyframes pulse { 
+			0% { border: 60px solid #FF0000; }
+			50% { border: 60px solid #000000; }
+			100% { border: 60px solid #FF0000; }
+		}
+		@keyframes pulse { 
+			0% { border: 60px solid #FF0000; }
+			50% { border: 60px solid #000000; }
+			100% { border: 60px solid #FF0000; }
+		}
+		
+		
+		@-moz-keyframes slideToMenu {
+			0% { width: 100%; }
+			100% { width: 125px; }
+		}
+		@-webkit-keyframes slideToMenu { 
+			0% { width: 100%; }
+			100% { width: 125px; }
+		}
+		@keyframes slideToMenu { 
+			0% { width: 100%; }
+			100% { width: 125px; }
+		}
+		
+		
+		@-moz-keyframes slideIconMenu {
+			0% { top: 50%; margin-top: -150px; margin-left: -321px; left: 50%; width: 642px; height: 300px; }
+			100% { top: 100%; margin-top: -60px; margin-left: 0; left: 10px; width: 106px; height: 50px; }
+		}
+		@-webkit-keyframes slideIconMenu { 
+			0% { top: 50%; margin-top: -150px; margin-left: -321px; left: 50%; width: 642px; height: 300px; }
+			100% { top: 100%; margin-top: -60px; margin-left: 0; left: 10px; width: 106px; height: 50px; }
+		}
+		@keyframes slideIconMenu { 
+			0% { top: 50%; margin-top: -150px; margin-left: -321px; left: 50%; width: 642px; height: 300px; }
+			100% { top: 100%; margin-top: -60px; margin-left: 0; left: 10px; width: 106px; height: 50px; }
+		}
+		
+		
+		@-moz-keyframes scaleIconMenu {
+			0% { width: 180px; height: 180px; border: 60px solid #FF0000; }
+			100% { width: 30px; height: 30px; border: 10px solid #FF0000; }
+		}
+		@-webkit-keyframes scaleIconMenu { 
+			0% { width: 180px; height: 180px; border: 60px solid #FF0000; }
+			100% { width: 30px; height: 30px; border: 10px solid #FF0000; }
+		}
+		@keyframes scaleIconMenu { 
+			0% { width: 180px; height: 180px; border: 60px solid #FF0000; }
+			100% { width: 30px; height: 30px; border: 10px solid #FF0000; }
+		}
+		
+		@-moz-keyframes fadeIn {
+			0% { opacity: 0; }
+			100% { opacity: 1; }
+		}
+		@-webkit-keyframes fadeIn { 
+			0% { opacity: 0; }
+			100% { opacity: 1; }
+		}
+		@keyframes fadeIn { 
+			0% { opacity: 0; }
+			100% { opacity: 1; }
+		}
+		</style>
+		
+		<script>
+			addElementHead('scripts/jquery-2.1.4.min.js', 'JS', function() { loginUser(); });
+			
+			function loginUser() {
+				var token = getStorage("token");
+				
+				if(token != null && token != "") {
+					$("#login").css('display', 'none');
+					loginWithToken(token);
+				} else {
+					openLogin();
+				}
+				
+				//loadJs();
+			}
+			
+			function addElementHead(pSrc, pScript, pFunction) {
+				var head = document.getElementsByTagName("head")[0] || document.documentElement;
+				
+				if(pScript != null && pScript == 'JS') {
+					var script = document.createElement("script");
+					script.src = pSrc;
+					
+					var done = false;
+				
+					script.onload = script.onreadystatechange = function() {
+						if (!done && (!this.readyState || this.readyState === "loaded" || this.readyState === "complete")) {
+							pFunction();
+							// Handle memory leak in IE
+							script.onload = script.onreadystatechange = null;
+							if ( head && script.parentNode ) {
+								head.removeChild( script );
+							}
+						}
+					};
+					
+					head.insertBefore(script, head.firstChild);
+				} else if(pScript != null && pScript == 'CSS') {
+					var link = document.createElement("link");
+					link.type = "text/css";
+					link.rel = "stylesheet";
+					link.href = pSrc;
+					
+					link.onload = link.onreadystatechange = function() {
+						if (!done && (!this.readyState || this.readyState === "loaded" || this.readyState === "complete")) {
+							pFunction();
+						}
+					};
+					
+					document.getElementsByTagName("head")[0].appendChild(link);
+				}
+			}
+			
+			function openLogin() {
+				$("#login").css('display', 'block');
+				changeLoadingStatus('Anmeldung');
+				
+				var frm = $("#login form");
+				
+				frm.submit(function (ev) {
+					$.ajax({
+						type: frm.attr('method'),
+						url: frm.attr('action'),
+						data: frm.serialize(),
+						success: function (data) {
+							parseLogin(data);
+						}
+					});
+				ev.preventDefault();
+				});
+			}
+			
+			function parseLogin(data) {
+				if(data != "failure 0") {
+					var json = JSON.parse(data);
+					
+					if(json.token != null && json.token != "" && json.username != null && json.username != "") {
+						setStorage("token", json.token);
+						setStorage("username", json.username);
+						loginWithToken();
+						$("#login").fadeOut();
+					}
+				} else {
+					alert("Fehler");
+				}
+			}
+			
+			function loginWithToken() {
+				var authToken = getStorage("token");
+				
+				$.post(
+					"ajax.php?action=login",
+					{
+						token: authToken
+					}
+				).done(function( data ) {
+					parseLoginToken(data);
+				});
+			}
+			
+			function parseLoginToken(data) {
+				var json = JSON.parse(data);
+				
+				if(json.status != null && json.status != "") {
+					if(json.status == "login") {
+						if(json.username != null && json.username != "") {
+							setStorage("username", json.username);
+							loadJs();
+						}
+					} else if(json.status == "needlogin") {
+						cleanLogin();
+						openLogin();
+					}
+				}
+			}
+			
+			function getStorage(pKey) {
+				if (localStorage) {
+					return localStorage.getItem(pKey);
+				} else {
+					var key = pKey + "=";
+					var ca = document.cookie.split(';');
+					for(var i = 0; i < ca.length; i++) {
+						var c = ca[i];
+						while (c.charAt(0)==' ') {
+							c = c.substring(1);
+						}
+						
+						if (c.indexOf(key) == 0)
+							return c.substring(key.length,c.length);
+					}
+				}
+				
+				return "";
+			}
+			
+			function setStorage(pKey, pValue) {
+				if (localStorage) {
+					localStorage.setItem(pKey, pValue);
+				} else {
+					document.cookie= pKey +"=" + pValue + "; expires=Thu, 18 Dec 2019 12:00:00 UTC";
+				}
+			}
+			
+			function cleanLogin() {
+				setStorage("token","");
+				setStorage("username","");
+			}
+			
+			function changeLoadingStatus(pString) {
+				document.getElementById('loading-status').innerHTML = pString;
+			}
+			
+			function loadJs() {
+				changeLoadingStatus('Lade Funktionen');
+				
+				addElementHead('scripts/general.js', 'JS', function() { loadCss(); });
+			}
+			
+			function loadCss() {
+				changeLoadingStatus('Lade Design');
+				
+				addElementHead('styles/general.css', 'CSS', function() { loadVision(); });
+			}
+			
+			function loadVision() {
+				changeLoadingStatus('Lade Vision');
+				
+				loadMenu();
+			}
+		</script>
+	</head>
+	<body>
+		<div id="loader">
+			<div id="menu">
+				<div class="menu-tile">Notizen</div>
+			</div>
+			
+			<div id="infinity"></div>
+			<div id="loading-status">Lade jQuery</div>
+		</div>
+		
+		<div id="login">
+			<br /><br />
+			<form action="ajax.php?action=login" method="post">
+				<label for="username-login">Benutzername</label><br/><input type="text" name="username" id="username-login" placeholder="Benutzername"><br /><br />
+				<label for="password-login">Kennwort</label><br/><input type="password" name="password" id="password-login" placeholder="Kennwort"><br /><br /><br />
+				<input type="submit" value="Anmelden">
+			</form>
+		</div>
+		
+		<div id="content">
+			Test
+		</div>
+		
+		<div id="search-overlay">
+			<div id="search-overlay-box">
+				<input id="search-box" type="search" placeholder="Suchen">
+				<div id="search-results"></div>
+			</div>
+		</div>
+	</body>
+</html>
