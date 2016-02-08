@@ -1,0 +1,5 @@
+{
+	"name":"Ts3Viewer",
+	"visible":"no",
+	"permissions":[["kick_player",0]]
+}

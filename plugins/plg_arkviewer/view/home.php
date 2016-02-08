@@ -1,0 +1,1 @@
+[{"type":"list","value":["Benutzer"],"click":["openPlugin('<?php echo $pluginManager->getPluginName(); ?>','user','')"]}]

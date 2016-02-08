@@ -1,0 +1,33 @@
+{
+	"name":"Notizen",
+	"database":
+		[
+			{
+				"name":"id",
+				"type":"integer"
+			},
+			{
+				"name":"name",
+				"type":"varchar"
+			},
+			{
+				"name":"text",
+				"type":"text"
+			},
+			{
+				"name":"password",
+				"type":"text",
+				"default":"empty_string"
+			}
+		],
+	"offline":
+		[
+			["addnote",""]
+		],
+	"viewCache":
+		[
+			["password",""]
+		],
+	"tags":[
+		["Notiz erstellen",["addnote",""]]]
+}

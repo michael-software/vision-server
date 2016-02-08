@@ -1,0 +1,12 @@
+{
+	"name":"Dateien",
+	"filesystem":true,
+	"viewCache":
+		[
+			["createfolder",""]
+		],
+	"paraCache":
+		[
+			["filesettings",""]
+		]
+}
