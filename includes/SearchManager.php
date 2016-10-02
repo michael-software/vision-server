@@ -1,10 +1,26 @@
 <?php
 
+require_once dirname(__FILE__) . '/PluginManager.php';
+
 class SearchManager {
 	function __construct() {
 	}
 	
+	function isIn($search, $item) {
+		if(stristr($search, $item) !== false) {
+			return true;
+		}
+		
+		if(stristr($item, $search) !== false) {
+			return true;
+		}
+		
+		return false;
+	}
+	
 	function getArray($pSearch) {
+		$pSearch = trim($pSearch);
+		
 		$array;
 		$pluginManager = new PluginManager();
 		$pluginArray = json_decode($pluginManager->getPlugins());
@@ -21,7 +37,7 @@ class SearchManager {
 			
 			$id   = $plugin['id'];
 			
-			if(stristr($name,$pSearch) !== false) {
+			if($this->isIn($pSearch, $name)) {
 				$array[] = Array("title"=>$name,"icon"=>$icon,"click"=>"openPlugin('$id','','')");
 			}
 			
@@ -30,12 +46,12 @@ class SearchManager {
 				
 				foreach($tags as $tag) {
 					if(is_array($tag) && count($tag) == 2 && count($tag[1]) == 2) {
-						if(stristr($tag[0],$pSearch) !== false) {
+						if($this->isIn($pSearch, $tag[0])) {
 							$description = $name.' - '.$tag[0];
 							$array[] = Array("title"=>$description,"icon"=>$icon,"click"=>"openPlugin('$id','" . $tag[1][0] . "','" . $tag[1][1] . "')");
 						}
 					} else {
-						if(stristr($tag,$pSearch) !== false) {
+						if($this->isIn($pSearch, $tag)) {
 							$description = $name.' - '.$tag;
 							$array[] = Array("title"=>$description,"icon"=>$icon,"click"=>"openPlugin('$id','','')");
 						}
