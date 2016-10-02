@@ -9,35 +9,16 @@ if(!empty($command)) {
 			
 			$userManager = $pluginManager->getUserManager();
 			if($userManager->registerUser($username, $password)) {
-				$pluginManager->redirect($pluginManager, "home");
+				die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", ""]}');
 			}
 			
-			$pluginManager->redirect($pluginManager, "user", "create");
+			die('{"redirect":["' . $pluginManager->getPluginName() . '", "user", "create"]}');
 		} else {
-			$jUI->add(new JUI\Heading("Benutzer erstellen"));
-			
-			
-			$username = new JUI\Input("username");
-			$username->setLabel("Benutzername: ");
-			$jUI->add($username);
-			
-			$jUI->nline(2);
-			
-			$password1 = new JUI\Input("password1");
-			$password1->setLabel("Kennwort: ");
-			$password1->setPreset(JUI\Input::PASSWORD);
-			$jUI->add($password1);
-			
-			$jUI->nline();
-			
-			$password2 = new JUI\Input("password2");
-			$password2->setLabel("Kennwort wiederholen: ");
-			$password2->setPreset(JUI\Input::PASSWORD);
-			$jUI->add($password2);
-			
-			$jUI->nline(2);
-			
-			$jUI->add(new JUI\Button("Benutzer erstellen", true));
+			echo '[{"type":"heading","value":"Benutzer erstellen"},';
+			echo '{"type":"input","name":"username","label":"Benutzername: "},{"type":"nl"},{"type":"nl"},';
+			echo '{"type":"password","name":"password1","label":"Kennwort: "},{"type":"nl"},';
+			echo '{"type":"password","name":"password2","label":"Kennwort wiederholen: "},{"type":"nl"},{"type":"nl"},';
+			echo '{"type":"submit","value":"Benutzer erstellen"}]';
 		}
 	} else {
 		if(!empty($_POST['userid'])) {
@@ -107,78 +88,49 @@ if(!empty($command)) {
 				}
 			}
 			
-			$pluginManager->redirect($pluginManager, "user", $_POST['userid'] . "/success");
+			die('{"redirect":["' . $pluginManager->getPluginName() . '", "user", "' . $_POST['userid'] . '/success"]}');
 		} else {
 			$userPrivilegs = $loginManager->getPermissions($command);
 			
-			$jUI->add(new JUI\Heading("Rechte"));
-			
-			$access_files = new JUI\Checkbox("access_files");
-			$access_files->setLabel("Zugriff auf Dateien");
+			echo '[{"type":"heading","value":"Rechte"},';
+			echo '{"type":"checkbox","name":"access_files","label":"Zugriff auf Dateien"';
 			
 			if(!empty($userPrivilegs['access_files']) && $userPrivilegs['access_files'] == 1)
-				$access_files->setChecked(true);
+				echo ',"checked":"checked"';
 			
-			$jUI->add($access_files);
-			$jUI->nline();
-			
-			
-			
-			$stop_server = new JUI\Checkbox("stop_server");
-			$stop_server->setLabel("Server herunterfahren/neustarten");
+			echo '},{"type":"nl"},';
+			echo '{"type":"checkbox","name":"stop_server","label":"Server herunterfahren/neustarten"';
 			
 			if(!empty($userPrivilegs['stop_server']) && $userPrivilegs['stop_server'] == 1)
-				$stop_server->setChecked(true);
+				echo ',"checked":"checked"';
 			
-			$jUI->add($stop_server);
-			$jUI->nline();
-			
-			
-			
-			$modify_users = new JUI\Checkbox("modify_users");
-			$modify_users->setLabel("Benutzer editieren");
+			echo '},{"type":"nl"},';
+			echo '{"type":"checkbox","name":"modify_users","label":"Benutzer editieren"';
 			
 			if(!empty($userPrivilegs['modify_users']) && $userPrivilegs['modify_users'] == 1)
-				$modify_users->setChecked(true);
+				echo ',"checked":"checked"';
 			
-			$jUI->add($modify_users);
-			$jUI->nline();
-			
-			
-			
-			$log_access = new JUI\Checkbox("log_access");
-			$log_access->setLabel("Log Dateien einsehen");
+			echo '},{"type":"nl"},';
+			echo '{"type":"checkbox","name":"log_access","label":"Log Dateien einsehen"';
 			
 			if(!empty($userPrivilegs['log_access']) && $userPrivilegs['log_access'] == 1)
-				$log_access->setChecked(true);
+				echo ',"checked":"checked"';
 			
-			$jUI->add($log_access);
-			$jUI->nline();
-			
-			
-			
-			$server_notify = new JUI\Checkbox("server_notify");
-			$server_notify->setLabel("Serverbenachrichtigungen erhalten");
+			echo '},{"type":"nl"},';
+			echo '{"type":"checkbox","name":"server_notify","label":"Serverbenachrichtigungen erhalten"';
 			
 			if(!empty($userPrivilegs['server_notify']) && $userPrivilegs['server_notify'] == 1)
-				$server_notify->setChecked(true);
+				echo ',"checked":"checked"';
 			
-			$jUI->add($server_notify);
-			$jUI->nline();
-			
-			
-			
-			$start_server = new JUI\Checkbox("start_server");
-			$start_server->setLabel("Server starten");
+			echo '},{"type":"nl"},';
+			echo '{"type":"checkbox","name":"start_server","label":"Server starten"';
 			
 			if(!empty($userPrivilegs['start_server']) && $userPrivilegs['start_server'] == 1)
-				$start_server->setChecked(true);
+				echo ',"checked":"checked"';
 			
-			$jUI->add($start_server);
-			$jUI->nline(2);
+			echo '},';
 			
-			
-			$jUI->add(new JUI\Heading("Recht Plugin zu benutzen", true));
+			echo '{"type":"nl"},{"type":"nl"},{"type":"headingSmall","value":"Recht Plugin zu benutzen"';
 			
 			$blacklistPluginName = array("plg_user", "plg_order", "plg_serversettings", "plg_license");
 			
@@ -188,19 +140,16 @@ if(!empty($command)) {
 				$pluginName = $plugin['name'];
 				
 				if(!in_array($pluginId, $blacklistPluginName)) {
-					$jUI->nline();
-					
-					$checkbox = new JUI\Checkbox("use_" . $pluginId);
-					$checkbox->setLabel($pluginName);
+					echo '},{"type":"nl"},';
+					echo '{"type":"checkbox","name":"use_' . $pluginId . '","label":"' . $pluginName . '"';
 					
 					if(!empty($userPrivilegs['use_' . $pluginId]) && $userPrivilegs['use_' . $pluginId] == 1)
-						$checkbox->setChecked(true);
-					
-					$jUI->add($checkbox);
+						echo ',"checked":"checked"';
 				}
 			}
 			
-			$jUI->nline();
+			echo '},';
+			echo '{"type":"nl"},';
 			
 			foreach($plugins as $plugin) {
 				$id = $plugin['id'];
@@ -209,40 +158,29 @@ if(!empty($command)) {
 				if(!empty($plugin['permissions']) && is_array($plugin['permissions'])) {
 					$permissions = $plugin['permissions'];
 					
-					$jUI->add(new JUI\Heading($name, true));
+					echo '{"type":"headingSmall","value":' . json_encode($name);
 					
 					foreach($permissions as $permission) {
 						$permissionId      = $permission['id'];
 						$permissionName    = $permission['name'];
 						$permissionDefault = $permission['default'];
 						
-						$jUI->nline();
-						
-						$checkbox = new JUI\Checkbox($permissionId);
-						$checkbox->setLabel($permissionName);
+						echo '},{"type":"nl"},';
+						echo '{"type":"checkbox","name":"' . $permissionId . '","label":"' . $permissionName . '"';
 						
 						if(!empty($userPrivilegs[$permissionId]) && $userPrivilegs[$permissionId] == 1)
-							$checkbox->setChecked(true);
-						
-						$jUI->add($checkbox);
+							echo ',"checked":"checked"';
 					}
+					
+					echo '},';
 				}
 			}
 			
 			if($pluginManager->getCommand(1) == "success") {
-				//echo '{"type":"warning","value":"Änderungen gespeichert"},';
-				$jUI->setWarning("Änderungen gespeichert");
+				echo '{"type":"warning","value":"Änderungen gespeichert"},';
 			}
 			
-			
-			$jUI->nline(2);
-			
-			$hidden = new JUI\Input("userid");
-			$hidden->setVisible(JUI\View::GONE);
-			$hidden->setValue($command);
-			$jUI->add($hidden);
-			
-			$jUI->add(new JUI\Button("Speichern", true));
+			echo '{"type":"nl"},{"type":"nl"},{"type":"input","name":"userid","value":"' . $command . '","visible":"away"},{"type":"submit","value":"Speichern"}]';
 		}
 	}
 }

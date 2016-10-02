@@ -4,5 +4,6 @@
 		[
 			["home",""]
 		],
-	"tags":["Rechte","TeamSpeak","Servereinstellungen"]
+	"tags":["Rechte","TeamSpeak","Servereinstellungen"],
+	"notifications":true
 }
