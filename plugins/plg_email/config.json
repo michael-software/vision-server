@@ -1,0 +1,27 @@
+{
+	"name":"Mail",
+	"visible":"yes",
+	"database":[[
+			{
+				"name":"id",
+				"type":"integer"
+			},
+			{
+				"name":"server",
+				"type":"varchar"
+			},
+			{
+				"name":"username",
+				"type":"varchar"
+			},
+			{
+				"name":"password",
+				"type":"varchar"
+			},
+			{
+				"name":"port",
+				"type":"integer"
+			}
+		]],
+	"notifications":true
+}

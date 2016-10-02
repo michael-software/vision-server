@@ -15,19 +15,19 @@
 	"value":"Kennwort ändern"
 },
 {
-	"type":"input",
+	"type":"password",
 	"name":"passwordOld",
 	"label":"Altes Kennwort: "
 },
 { "type":"nl" }, { "type":"nl" },
 {
-	"type":"input",
+	"type":"password",
 	"name":"passwordNew1",
 	"label":"Neues Kennwort: "
 },
 { "type":"nl" },
 {
-	"type":"input",
+	"type":"password",
 	"name":"passwordNew2",
 	"label":"Neues Kennwort wiederholen: "
 },

@@ -4,46 +4,41 @@
 		$content = $_POST['noteContent'];
 		
 		if(!empty($_POST['notePassword'])) {
-			$password = $_POST['notePassword'];
+			$password = LoginManager::getSaltedPassword($loginManager->getUsername(), $_POST['notePassword']);
 		} else {
 			$password = '';
 		}
 		
 		$pluginManager->databaseManager->insertValue(Array("name"=>Array("value"=>$name),"text"=>Array("value"=>$content),"password"=>Array("value"=>$password)));
 		
-		die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", ""]}');
+		$pluginManager->redirect( $pluginManager );
 	}
-?>
 
-[
-	{
-		"type":"heading",
-		"value":"Notiz erstellen"
-	},
-	{
-		"type":"input",
-		"label":"Name:",
-		"name":"noteName"
-	},
-	{ "type":"nl" },
-	{
-		"type":"input",
-		"label":"Kennwort:",
-		"name":"notePassword"
-	},
-	{ "type":"nl" },
-	{ "type":"nl" },
-	{
-		"type":"textarea",
-		"name":"noteContent",
-		"width":500,
-		"height":200,
-		"label":"Notiz:"
-	},
-	{ "type":"nl" },
-	{ "type":"nl" },
-	{
-		"type":"submit",
-		"value":"Speichern"
-	}
-]
+	$jUI->add(new JUI\Heading("Notiz erstellen"));
+
+	$name = new JUI\Input("noteName");
+	$name->setLabel("Name: ");
+	$jUI->add($name);
+
+	$jUI->nline();
+
+	$passwordInput = new JUI\Input("notePassword");
+	$passwordInput->setPreset(JUI\Input::PASSWORD);
+	$jUI->add($passwordInput);
+
+	$jUI->nline(2);
+
+	$textarea = new JUI\Input("noteContent");
+	$textarea->setPreset( JUI\Input::MULTILINE );
+	$textarea->setWidth('100%');
+	$textarea->setHeight(200);
+	$jUI->add($textarea);
+
+	$jUI->nline(2);
+
+	$jUI->add( new JUI\Button("Speichern", true) );
+
+	$back = new JUI\Button("Zurück");
+	$back->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager ) );
+	$jUI->add($back);
+?>

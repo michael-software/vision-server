@@ -16,8 +16,7 @@
 			},
 			{
 				"name":"password",
-				"type":"text",
-				"default":"empty_string"
+				"type":"text"
 			}
 		],
 	"offline":
@@ -29,5 +28,6 @@
 			["password",""]
 		],
 	"tags":[
-		["Notiz erstellen",["addnote",""]]]
+		["Notiz erstellen",["addnote",""]]],
+	"shareable":"true"
 }

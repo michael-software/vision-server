@@ -1,0 +1,3 @@
+<?php
+	$loginManager->logout();
+?>

@@ -1,0 +1,5 @@
+{
+	"name":"Remote",
+	"notifications":true,
+	"mime":["image/*", "text/*"]
+}

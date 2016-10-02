@@ -12,58 +12,124 @@ if($folder == "./") {
 }
 
 $folder = str_replace('//', '/', $folder);
+$folder = str_replace('..', '.', $folder);
+
+if(!empty($_FILES)) {
+	if( $pluginManager->fileManager->uploadFiles($_FILES['files'], $folder) ) {
+		$pluginManager->redirect($pluginManager, 'home', $folder);
+	}
+}
+
+if(!$loginManager->getShareManager()->isShared())
+	$jUI->setShare('share', $folder);
+
+$jUI->add( new JUI\Heading('Dateien') );
+
+if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManager()->getParameter()->allowCreate === TRUE) {
+	$createFolder = new JUI\Button('Ordner erstellen');
+	$createFolder->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'createfolder', $folder ) );
+	$jUI->add( $createFolder );
+}
+
+if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManager()->getParameter()->allowUpload === TRUE) {
+	$fileupload = new JUI\File('files');
+	$fileupload->setMultiple();
+	$jUI->add($fileupload);
+
+	$jUI->add( new JUI\Button('Hochladen', TRUE) );
+}
+
+$list = new JUI\ListView();
 
 if(!empty($folder)) {
-	$list = array("..");
+	//$list = array("..");
 	
 	$upperFolder = dirname($folder);
 	if($upperFolder == ".") {
 		$upperFolder = "";
 	}
 	
-	$actions = array('openPlugin("plg_files","home","' . $upperFolder . '")');
-} else {
-	$list = array();
-	$actions = array();
-	$actions2 = array();
+	$list->addItem("..", new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'home', $upperFolder ) );
 }
+
+$folders = null;
+$files = null;
 
 foreach($pluginManager->fileManager->getFolder($folder) as $element) {
-	$list[] = $element['name'];
-	
-	if($element['type'] == "dir") {
-		$actions[] = 'openPlugin("plg_files","home","' . $folder . $element['name'] . '/")';
-	} else {
-		$actions[] = 'openMedia("' . $element['type'] . '","' . $folder . $element['name'] . '")';
-	}
-	
-	if($element['type'] != "dir") {
-		$actions2[] = 'openPlugin("plg_files","filesettings","' . $folder . $element['name'] . '/")';
-	} else {
-		$actions2[] = 'openPlugin("plg_files","foldersettings","' . $folder . $element['name'] . '/")';
+	if(FileManager::isVisible($element['name'])) {
+		if($element['type'] == "dir") {
+			$name = $element['name'];
+			
+			$click = new JUI\Click( JUI\Click::openPlugin, $pluginManager, "home", $folder . $element['name'] . '/' );
+			$longclick = new JUI\Click( JUI\Click::openPlugin, $pluginManager, "foldersettings", $folder . $element['name'] . '/' );
+			
+			
+			$key = strtolower($name);
+			if(!empty($folders[$key])) {
+				$key .= count($folders);
+			}
+			
+			$folders[strtolower($name)] = array("name"=>$name, "click"=>$click, "longclick"=>$longclick);
+		} else if($element['type'] == "tmpdl") {
+			$name = $element['name'];
+			
+			$click = new JUI\Click( JUI\Click::openPlugin, $pluginManager, "temp", $folder . $element['name'] . '/' );
+			$longclick = new JUI\Click( JUI\Click::openPlugin, $pluginManager, "temp", $folder . $element['name'] . '/' );
+			
+			
+			$key = strtolower($name);
+			if(!empty($files[$key])) {
+				$key .= count($files);
+			}
+			
+			$files[$key] = array("name"=>$name, "click"=>$click, "longclick"=>$longclick);
+		} else {
+			$bytes = filesize($pluginManager->fileManager->userFiles . $folder . $element['name']);
+			$bytesString = $pluginManager->fileManager->getBytesString($bytes);
+			
+			$name = $element['name'] . ' (' . $bytesString . ')';
+			
+			$click = new JUI\Click( JUI\Click::openMedia, $element['type'], $folder . $element['name'] );
+			$longclick = new JUI\Click( JUI\Click::openPlugin, $pluginManager, "filesettings", $folder . $element['name'] . '/' );
+			
+			
+			$key = strtolower($name);
+			if(!empty($files[$key])) {
+				$key .= count($files);
+			}
+			
+			$files[$key] = array("name"=>$name, "click"=>$click, "longclick"=>$longclick);
+		}
 	}
 }
-?>
 
-[
-	{
-		"type":"heading",
-		"value":"Dateien"
-	},
-	{
-		"type":"button",
-		"value":"Ordner erstellen",
-		"click":<?php echo json_encode('openPlugin("plg_files","createfolder","' . $folder . '")'); ?>
-	},
-		{
-		"type":"file",
-		"name":"files",
-		"multiple":"multiple"
-	},
-	{
-		"type":"list",
-		"value":<?php echo json_encode($list); ?>,
-		"click":<?php echo json_encode($actions); ?>,
-		"longclick":<?php echo json_encode($actions2); ?>
+if(!empty($folders) && is_array($folders)) {
+	ksort($folders, SORT_STRING);
+	
+	if(!empty($folders) && is_array($folders))
+	foreach($folders as $folder) {
+		$name = $folder['name'];
+		$click = $folder['click'];
+		$longclick = $folder['longclick'];
+		
+		$list->addItem($name, $click, $longclick);
 	}
-]
+}
+
+if(!empty($files) && is_array($files)) {
+	ksort($files, SORT_STRING);
+	
+	if(!empty($files) && is_array($files))
+	foreach($files as $file) {
+		$name = $file['name'];
+		$click = $file['click'];
+		$longclick = $file['longclick'];
+		
+		$list->addItem($name, $click, $longclick);
+	}
+}
+
+$jUI->add( $list );
+
+
+?>

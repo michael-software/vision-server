@@ -4,38 +4,54 @@
 	
 	if(!empty($_POST['noteContent']) AND !empty($id)) {
 		$content = $_POST['noteContent'];
+		$change = Array("text"=>Array("value"=>$content));
 		
-		$pluginManager->databaseManager->setValue(Array("text"=>Array("value"=>$content)), Array("id"=>Array("operator"=>"=", "value"=>$id, "type"=>"i")));
+		if(!empty($_POST['password'])) {
+			$change['password']['value'] = LoginManager::getSaltedPassword($loginManager->getUsername(), $_POST['password']);
+		}
 		
-		die('{"redirect":["' . $pluginManager->getPluginName() . '","home",""]}');
+		$pluginManager->databaseManager->setValue($change, Array("id"=>Array("operator"=>"=", "value"=>$id, "type"=>"i")));
+		
+		$pluginManager->redirect( $pluginManager );
 	}
 	
 	$value = $pluginManager->databaseManager->getValues(Array("id"=>Array("operator"=>"=", "value"=>$id)),1);
 	
 	if(!empty($value['password']) && !empty($password)) {
 		if($value['password'] != $password){
-			die('{"redirect":["' . $pluginManager->getPluginName() . '", "password", "' . $id . '"]}');
+			$pluginManager->redirect( $pluginManager, 'password', $id );
 		}
 	} else if(!empty($value['password']) && empty($password)) {
-		die('{"redirect":["' . $pluginManager->getPluginName() . '", "password", "' . $id . '"]}');
+		$pluginManager->redirect( $pluginManager, 'password', $id );
 	}
-?>
 
-[
-	{
-		"type":"heading",
-		"value":<?php echo json_encode($value['name']); ?>
-	},
-	{
-		"type":"textarea",
-		"value":<?php echo json_encode($value['text']); ?>,
-		"name":"noteContent",
-		"width":500,
-		"height":200
-	},
-	{ "type":"nl" },{ "type":"nl" },
-	{
-		"type":"submit",
-		"value":"Speichern"
-	}
-]
+	$jUI->add(new JUI\Heading($value['name']));
+
+	$textarea = new JUI\Input("noteContent");
+	$textarea->setPreset( JUI\Input::MULTILINE );
+	$textarea->setWidth('100%');
+	$textarea->setHeight(200);
+	$textarea->setValue($value['text']);
+	$jUI->add($textarea);
+
+	$warning = new JUI\Text("Wenn das Kennwortfeld leer gelassen wird, so wird das bisherige Kennwort benutzt.");
+	$warning->setColor("#FF0000");
+	$jUI->add($warning);
+
+	$passwordInput = new JUI\Input("password");
+	$passwordInput->setPreset(JUI\Input::PASSWORD);
+	$jUI->add($passwordInput);
+
+	$jUI->nline(2);
+
+	$settings = new JUI\Button("Einstellungen");
+	$tmpId = $id; if(!empty($password)) $tmpId = $id . '/' . $password;
+	$settings->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'notesettings', $tmpId ) );
+	$jUI->add($settings);
+
+	$jUI->add( new JUI\Button("Speichern", true) );
+
+	$back = new JUI\Button("Zurück");
+	$back->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager ) );
+	$jUI->add($back);
+?>

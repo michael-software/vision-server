@@ -3,34 +3,40 @@
 		$name  = $_POST['name'];
 		$value = str_replace(',', '.', $_POST['value']);
 		$value = round(floatval($value)*100);
+
+		$timestamp = time();
+		if(!empty($_POST['timestamp'])) {
+			$timestamp = $_POST['timestamp'];
+		}
 		
-		$pluginManager->databaseManager->insertValue(Array("name"=>Array("value"=>$name),"value"=>Array("value"=>$value)));
+		$pluginManager->databaseManager->insertValue(Array("name"=>Array("value"=>$name),"value"=>Array("value"=>$value),"timestamp"=>Array("value"=>$timestamp, "type"=>"integer")));
 		
 		die('{"redirect":["plg_banking", "home", ""]}');
 	}
+
+	$jUI->add(new JUI\Heading('Einnahme hinzufügen'));
+
+	$name = new JUI\Input('name');
+	$name->setLabel('Name: ');
+	$jUI->add($name);
+
+	$jUI->nline();
+
+	$price = new JUI\Input('value');
+	$price->setPreset(JUI\Input::NUMBERS);
+	$price->setLabel('Preis: ');
+	$jUI->add($price);
+
+	$jUI->nline();
+
+	$date = new JUI\Input('timestamp');
+	$date->setPreset(JUI\Input::DATE);
+	$date->setLabel('Datum: ');
+	$jUI->add($date);
+
+	$jUI->nline(2);
+
+	$submit = new JUI\Button('Speichern', true);
+	$jUI->add($submit);
 ?>
 
-[
-	{
-		"type":"heading",
-		"value":"Einnahme hinzufügen"
-	},
-	{
-		"type":"input",
-		"name":"name",
-		"label":"Name:"
-	},
-	{ "type":"nl" },
-	{
-		"type":"input",
-		"name":"value",
-		"accept":"numbers",
-		"label":"Preis:"
-	},
-	{ "type":"nl" },
-	{ "type":"nl" },
-	{
-		"type":"submit",
-		"value":"Speichern"
-	}
-]

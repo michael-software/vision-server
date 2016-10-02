@@ -1,0 +1,35 @@
+{
+	"name":"Messenger",
+	"visible":"yes",
+	"notifications":true,
+	"database":
+	[
+		{
+			"name":"id",
+			"type":"integer"
+		},
+		{
+			"name":"text",
+			"type":"text"
+		},
+		{
+			"name":"sender",
+			"type":"integer"
+		},
+		{
+			"name":"recipient",
+			"type":"integer"
+		},
+		{
+			"name":"type",
+			"type":"integer",
+			"default":"0"
+		},
+		{
+			"name":"timestamp",
+			"type":"timestamp",
+			"default":"current_timestamp"
+		}
+	],
+	"mime":["image/*", "text/*"]
+}
