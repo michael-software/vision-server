@@ -28,3 +28,6 @@ scripts/nonJui.html
 scripts/package.json
 scripts/index.json
 webdav/vendor/
+plugins/plg_ts3viewer/
+plugins/plg_mcviewer/
+plugins/plg_jui_example/
