@@ -1,29 +1,58 @@
 <?php
 session_start();
 require_once dirname(__FILE__).'/DatabaseManager.php';
+require_once dirname(__FILE__).'/LogManager.php';
+require_once dirname(__FILE__).'/ShareManager.php';
+require_once dirname(__FILE__).'/JwtManager.php';
+
+if (!defined('WEBSOCKET')) {
+    define('WEBSOCKET', '2');
+}
+
+define('AUTHTOKENS', 1);
+define('USER_PERMISSIONS', 2);
 
 class LoginManager {
 	private $databaseManager;
-	const STOP_SERVER  = 1;
-	const FILE_ACCESS  = 2;
-	const MODIFY_USERS = 3;
+	
+	const STOP_SERVER   = 1;
+	const FILE_ACCESS   = 2;
+	const MODIFY_USERS  = 3;
+	const LOG_ACCESS    = 4;
+	const SERVER_NOTIFY = 5;
+	const START_SERVER  = 6;
+	const SERVER_CONFIG = 7;
+	
+	const GROUP_SERVER = 1;
+	const GROUP_SERVER_ADMIN = 2;
+	
+	private $shareManager;
+	private $user = array();
+	private $revalidate = true;
+	private $jwtManager = null;
 	
 	public function __construct() {
-		/*
-		$json[] = array('type'=>'int', 'name'=>'id');
-		$json[] = array('type'=>'varchar', 'name'=>'username');
-		$json[] = array('type'=>'varchar', 'name'=>'password');
-		$json[] = array('type'=>'timestamp', 'name'=>'timestamp', 'default'=>'current_timestamp');
+		$this->jwtManager = new JwtManager();
+
+		$this->secure(); // secure the c
 		
-		$json = json_encode($json);
-		echo $json;*/
-		$json = '[{"type":"int","name":"id"},{"type":"varchar","name":"username"},{"type":"varchar","name":"password"},{"type":"timestamp","name":"timestamp","default":"current_timestamp"}]';
-		$json = json_decode($json);
+		$json = json_decode(DatabaseManager::$table1);
 		
 		$this->databaseManager = new DatabaseManager();
-		$this->databaseManager->openTable("user", $json);
+		$this->databaseManager->openTable("users", $json);
 		
-		if(!empty($_SESSION['username']) AND !empty($_SESSION['id']) AND !empty($_SESSION['authtoken'])) {
+		if(!empty($_POST['share'])) {
+			$this->shareManager = new ShareManager($_POST['share']);
+		} else if(!empty($_GET['share'])) {
+			$this->shareManager = new ShareManager($_GET['share']);
+		} else if(!empty($_SERVER['HTTP_AUTHORIZATION']) && $this->startsWith($_SERVER['HTTP_AUTHORIZATION'], 'bearer ')) {
+			$jwtRequest = substr($_SERVER['HTTP_AUTHORIZATION'], 7);
+
+			$this->proofJwt($jwtRequest);
+		} else if(!empty($_GET['jwt'])) {
+			$this->proofJwt($_GET['jwt']);
+		} else if(!empty($_SESSION['username']) AND !empty($_SESSION['id']) AND !empty($_SESSION['authtoken'])) {
+			$this->shareManager = new ShareManager($_SESSION['id']);
 		} else if(!empty($_POST['token'])) {
 			if(! $this->loginUserByToken($_POST['token'])) {
 				die('{"status":"needlogin"}');
@@ -40,11 +69,86 @@ class LoginManager {
 			if(! $this->loginUserByToken($_GET['authtoken'])) {
 				die("test2");
 			}
+		} else if(!empty($_GET['action']) AND $_GET['action'] == "login" && !empty($_POST['username']) && !empty($_POST['password'])) {
+			
+		} else if(constant('WEBSOCKET') == 1) {
+		} else if(empty($_SESSION['username']) || empty($_SESSION['id']) || empty($_SESSION['authtoken'])) {
+			die('{"status":"needrelogin"}');
 		}
 	}
+
+	function revalidate() {
+		if(!empty($_SERVER['HTTP_AUTHORIZATION'])  && $this->startsWith($_SERVER['HTTP_AUTHORIZATION'], 'bearer ')) {
+			$jwtRequest = substr($_SERVER['HTTP_AUTHORIZATION'], 7);
+			$data = $this->jwtManager->getJwtData($jwtRequest);
+
+			if(!empty($data->sub) && $this->jwtManager->validateJwt($jwtRequest, 'secret') == 2) {
+				$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, 'secret', array('sub'=>$data->sub), 60);
+				$jwtSignature = $this->jwtManager->getSignature($jwt);
+
+				$this->addJwtSignature($jwtSignature, $name='Endgerät', $data->sub);
+				$this->removeJwtSignature($this->jwtManager->getSignature($jwtRequest), $data->sub);
+
+				return $jwt;
+			}
+		}
+	}
+
+	function needRevalidation() {
+		return $this->revalidate;
+	}
+
+	function startsWith($haystack, $needle) {
+		// search backwards starting from haystack length characters from the end
+		return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
+	}
+
+	function proofJwt($jwtRequest) {
+		if($this->jwtManager->validateJwt($jwtRequest, 'secret') == 2) {
+			$data = $this->jwtManager->getJwtData($jwtRequest);
+
+			$_SESSION['id'] = $data->sub;
+			$this->user["id"] = $data->sub;
+			$this->user["username"] = $data->name;
+
+			$jwtInfo =  $this->getJwtInfoBySignature( $this->jwtManager->getSignature($jwtRequest), $data->sub);
+
+			if( !empty($jwtInfo) && empty($jwtInfo['refused']) ) {
+				$this->revalidate = true;
+			} else {
+				header("HTTP/1.1 401 Unauthorized");
+				die('{"head":{"status":401}}');
+			}
+		} else if($this->jwtManager->validateJwt($jwtRequest, 'secret') != 1) {
+			header("HTTP/1.1 401 Unauthorized");
+			die('{"head":{"status":401}}');
+		} else {
+			$data = $this->jwtManager->getJwtData($jwtRequest);
+
+			$_SESSION['id'] = $data->sub;
+			$this->user["id"] = $data->sub;
+			$this->user["username"] = $data->name;
+
+			$this->revalidate = false;
+		}
+	}
+
+	function getUserList() {
+		$pReturn = $this->databaseManager->getValues();
+		
+		$userList;
+		
+		for($i = 0; $i < count($pReturn); $i++) {
+			$pReturn[$i]['digesta1'] = md5($pReturn[$i]['digesta1']);
+			$id = $pReturn[$i]['id'];
+			
+			$userList[$id] = $pReturn[$i];
+		}
+		
+		return $userList;
+	}
 	
-	private function crypto_rand_secure($min, $max)
-	{
+	private function crypto_rand_secure($min, $max) {
 	    $range = $max - $min;
 	    if ($range < 1) return $min; // not so random...
 	    $log = ceil(log($range, 2));
@@ -58,8 +162,8 @@ class LoginManager {
 	    return $min + $rnd;
 	}
 
-	function getSecurityToken()
-	{
+	function getSecurityToken($name='Endgerät', $pUsername, $pPassword, $userid) {
+		/*
 		$length = 64;
 	    $token = "";
 	    $codeAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -68,25 +172,68 @@ class LoginManager {
 	    $max = strlen($codeAlphabet) - 1;
 	    for ($i=0; $i < $length; $i++) {
 	        $token .= $codeAlphabet[$this->crypto_rand_secure(0, $max)];
-	    }
+	    }*/
+
+		$jwtManager = new JwtManager();
+		$token = $jwtManager->createJwt($pUsername, $pPassword, 'secret', array('sub'=>$userid), 60);
 		
-		$this->addSecurityToken($token);
+		$this->addSecurityToken($token, $name);
+		$this->addJwtSignature($jwtManager->getSignature($token), $name, $userid);
 		
 		//return "Test";
 	    return $token;
 	}
+
+	function base64url_encode($data) { 
+		return rtrim(strtr(base64_encode($data), '+/', '-_'), '='); 
+	} 
+
+	function base64url_decode($data) { 
+		return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) % 4, '=', STR_PAD_RIGHT)); 
+	} 
 	
-	function loginUserByPassword($pUsername, $pPassword) {
+	function loginUserByPassword($pUsername, $pPassword, $name='Endgerät') {
+		global $logManager;
+		
+		$pUsername = trim(strtolower($pUsername));
 		$array['username'] = array('operator'=>'=', 'value'=>$pUsername);
 		$result = $this->databaseManager->getValues($array, 1);
 		
 		if($result != null) {
-			if($result['username'] == $pUsername && $this->isSame($result['password'], $pPassword) AND !empty($result['id'])) {
+			if(!empty($result['id']) && $result['username'] == $pUsername && $this->isSame($result['digesta1'], $result['username'], $pPassword)) {
 				$id = $result['id'];
 				
 				$permissions = $this->getPermissions($id);
 				
-				$this->setSessions($pUsername, $id, $permissions['group']);
+				$_SESSION['id'] = $id;
+				$securityToken = $this->getSecurityToken($name, $pUsername, $pPassword, $id);
+				
+				$this->setSessions($pUsername, $id, $permissions['group'], $securityToken);
+				
+				if(constant('WEBSOCKET') != 1)
+					$logManager->addLog("Der Benutzer " . $result['username'] . " hat sich angemeldet. (IP: " . $_SERVER['REMOTE_ADDR'] . ")");
+				return $securityToken;
+			}
+		}
+		
+		if(constant('WEBSOCKET') != 1) {
+			$message = "Ein Benutzer hat versucht sich mit fehlerhaften Anmeldedaten (Benutzername: '" . $pUsername . "') anzumelden (IP: " . $_SERVER['REMOTE_ADDR'] . ").";
+			$logManager->addLog($message);
+		}
+		return null;
+	}
+
+	function isShared($shareCode) {
+		$array['id'] = array('operator'=>'=', 'value'=>$shareCode);
+		$shareDatabaseManager = new DatabaseManager();
+		$shareDatabaseManager->openTable('share', json_decode(DatabaseManager::$table9));
+		$result = $shareDatabaseManager->getValues($array, 1);
+		
+		if($result != null) {
+			if(!empty($result['id']) && $result['id'] == $shareCode) {
+				if(empty($this->shareManager)) {
+					$this->shareManager = new ShareManager($shareCode);
+				}
 				
 				return true;
 			}
@@ -95,35 +242,41 @@ class LoginManager {
 		return false;
 	}
 	
-	function addSecurityToken($token) {
+	private function addSecurityToken($token, $name='Endgerät') {
 		$json = DatabaseManager::$table2;
 		$json = json_decode($json);
 		
 		$databaseManagerSecurityToken = new DatabaseManager();
 		$databaseManagerSecurityToken->openTable("authtokens", $json);
 		
-		$userId = LoginManager::getId();
+		$userId = $this->getId();
+		
+		if(!empty($_SERVER['REMOTE_ADDR'])) {
+			$array['name'] = array('value'=> $name . ' - ' . $_SERVER['REMOTE_ADDR'] );
+		} else {
+			$array['name'] = array('value'=> $name . ' - ' . uniquid() );
+		}
 		
 		$array['authtoken'] = array('value'=>$token);
 		$array['user']      = array('value'=>$userId);
 		$databaseManagerSecurityToken->insertValue($array);
+		
+		sync(AUTHTOKENS);
 	}
 	
-	function setSessions($pUsername, $pId, $pGroup) {
+	private function setSessions($pUsername, $pId, $pGroup, $pAuthtoken) {
 		$_SESSION['id'] = $pId;
 		$_SESSION['username'] = $pUsername;
 		$_SESSION['group'] = $pGroup;
-	}
-	
-	static function getId() {
-		if(!empty($_SESSION['id'])) {
-			return $_SESSION['id'];
-		}
+		$_SESSION['authtoken'] = $pAuthtoken;
+		
+		$this->shareManager = new ShareManager($pId);
 	}
 	
 	function loginUserByToken($pToken) {
-		$json = DatabaseManager::$table2;
-		$json = json_decode($json);
+		global $logManager;
+		
+		$json = json_decode(DatabaseManager::$table2);
 		
 		$databaseManagerSecurityToken = new DatabaseManager();
 		$databaseManagerSecurityToken->openTable("authtokens", $json);
@@ -141,13 +294,44 @@ class LoginManager {
 					$_SESSION['authtoken'] = $pToken;
 					
 					$permissions = $this->getPermissions($userId);
-					$this->setSessions($result['username'], $userId, $permissions['group']);
+					$this->setSessions($result['username'], $userId, $permissions['group'], $pToken);
 					
 					return true;
 				}
 			}
 		}
 		
+		if(constant('WEBSOCKET') != 1)
+			$logManager->addLog("Ein Benutzer versuchte sich mit einem fehlerhaften Authtoken anzumelden (IP: " . $_SERVER['REMOTE_ADDR'] . ")");
+		return false;
+	}
+
+	function loginUserByJwt($jwt) {
+		global $logManager;
+
+		$data = $this->jwtManager->getJwtData($jwt);
+		$validate = $this->jwtManager->validateJwt($jwt, 'secret');
+		if($validate == 1 || $validate == 2) {
+
+			if($validate == 2) {
+				$jwtInfo =  $this->getJwtInfoBySignature( $this->jwtManager->getSignature($jwt), $data->sub);
+			}
+
+			if( $validate == 1 || (!empty($jwtInfo) && empty($jwtInfo['refused'])) ) {
+			
+				$userId = $data->sub;
+
+				$permissions = $this->getPermissions($userId);
+				$this->setSessions($data->name, $userId, $permissions['group'], $jwt);
+
+				return true;
+			}
+		} else {
+			return false;
+		}
+		
+		if(constant('WEBSOCKET') != 1)
+			$logManager->addLog("Ein Benutzer versuchte sich mit einem fehlerhaften Authtoken anzumelden (IP: " . $_SERVER['REMOTE_ADDR'] . ")");
 		return false;
 	}
 	
@@ -176,6 +360,11 @@ class LoginManager {
 			$resultToken2[$permissionName] = $permissionValue;
 		}
 		
+		$resultToken2['use_plg_serversettings'] = "1";
+		$resultToken2['use_plg_license'] = "1";
+		$resultToken2['use_plg_order'] = "1";
+		$resultToken2['use_plg_user'] = "1";
+		
 		if(!empty($resultToken1) && !empty($resultToken2)) {
 			return array_merge($resultToken2, $resultToken1);
 		} else if(!empty($resultToken2)) {
@@ -199,6 +388,57 @@ class LoginManager {
 		return $decryptedKey;
 	}
 	
+	function getUserPreference($name, $default=null) {
+		if( is_string($name) ) {
+			$databasePreferences = new DatabaseManager();
+			$json = json_decode(DatabaseManager::$table6);
+			$databasePreferences->openTable("user_preferences", $json);
+			
+			$result = $databasePreferences->getValues(Array("name"=>Array("value"=>$name, "type"=>"s", "operator"=>"=")), 1);
+			
+			if(!empty($result) && !empty($result['value'])) {
+				return $result['value'];
+			}
+		}
+		
+		return $default;
+	}
+	
+	function setUserPreference($name, $value) {
+		if( is_string($name) ) {
+			$databasePreferences = new DatabaseManager();
+			$json = json_decode(DatabaseManager::$table6);
+			$databasePreferences->openTable("user_preferences", $json);
+			
+			$result = $databasePreferences->insertOrUpdateValue(Array("value"=>Array("value"=>$value, "type"=>"s")), Array("name"=>Array("value"=>$name, "type"=>"s", "operator"=>"=")) );
+		}
+	}
+	
+	function addMainPlugin($pluginId) {
+		$mainPlugins = $this->getUserPreference("mainplugins", null);
+		
+		if(!empty($mainPlugins)) {
+			$mainPlugins .= '|';
+		}
+		$mainPlugins .= $pluginId;
+		
+		if(empty($mainPlugins) || strpos($this->getUserPreference("mainplugins", null), $pluginId) === FALSE) {
+			$this->setUserPreference("mainplugins", $mainPlugins);
+		}
+		
+		return null;
+	}
+	
+	function removeMainPlugin($pluginId) {
+		$mainPlugins = $this->getUserPreference("mainplugins", null);
+		
+		$mainPlugins = str_replace($pluginId . '|', '', $mainPlugins);
+		$mainPlugins = str_replace('|' . $pluginId, '', $mainPlugins);
+		
+		$this->setUserPreference("mainplugins", $mainPlugins);
+		return null;
+	}
+	
 	function getGroup() {
 		if(!empty($_SESSION['group'])) {
 			return $_SESSION['group'];
@@ -207,16 +447,30 @@ class LoginManager {
 	}
 	
 	function getUsername() {
-		if(!empty($_SESSION['username'])) {
+		if(!empty($this->shareManager) && !empty($this->shareManager->getUsername())) {
+			return $this->shareManager->getUsername();
+		} else if(!empty($_SESSION['username'])) {
 			return $_SESSION['username'];
+		} else if(!empty($this->user["username"])) {
+			return $this->user["username"];
 		}
 		
 		return "";
 	}
 	
+	function getId() {
+		if(!empty($this->shareManager) && !empty($this->shareManager->getId())) {
+			return $this->shareManager->getId();
+		} else if(!empty($_SESSION['id'])) {
+			return $_SESSION['id'];
+		} else if(!empty($this->user["id"])) {
+			return $this->user["id"];
+		}
+	}
+	
 	function getPermission($pPermission) {
-		if(!empty($_SESSION['id'])) {
-			$permission = $this->getPermissions($_SESSION['id']);
+		if(!empty($this->getId())) {
+			$permission = $this->getPermissions($this->getId());
 			
 			if($pPermission == LoginManager::FILE_ACCESS) {
 				if(!empty($permission['access_files']) && $permission['access_files'] == 1) {
@@ -228,6 +482,22 @@ class LoginManager {
 				}
 			} else if($pPermission == LoginManager::MODIFY_USERS) {
 				if(!empty($permission['modify_users']) && $permission['modify_users'] == 1) {
+					return true;
+				}
+			} else if($pPermission == LoginManager::LOG_ACCESS) {
+				if(!empty($permission['log_access']) && $permission['log_access'] == 1) {
+					return true;
+				}
+			} else if($pPermission == LoginManager::SERVER_NOTIFY) {
+				if(!empty($permission['server_notify']) && $permission['server_notify'] == 1) {
+					return true;
+				}
+			} else if($pPermission == LoginManager::START_SERVER) {
+				if(!empty($permission['start_server']) && $permission['start_server'] == 1) {
+					return true;
+				}
+			} else if($pPermission == LoginManager::SERVER_CONFIG) {
+				if(!empty($permission['server_config']) && $permission['server_config'] == 1) {
 					return true;
 				}
 			} else {
@@ -242,13 +512,25 @@ class LoginManager {
 	
 	function isAllowed($pPermission) {
 		if($pPermission == LoginManager::STOP_SERVER) {
-			if($this->getGroup() >= 2)
+			if($this->getPermission(LoginManager::STOP_SERVER))
 				return true;
 		} else if($pPermission == LoginManager::FILE_ACCESS) {
 			if($this->getPermission(LoginManager::FILE_ACCESS))
 				return true;
 		} else if($pPermission == LoginManager::MODIFY_USERS) {
 			if($this->getPermission(LoginManager::MODIFY_USERS))
+				return true;
+		} else if($pPermission == LoginManager::LOG_ACCESS) {
+			if($this->getPermission(LoginManager::LOG_ACCESS))
+				return true;
+		} else if($pPermission == LoginManager::SERVER_NOTIFY) {
+			if($this->getPermission(LoginManager::SERVER_NOTIFY))
+				return true;
+		} else if($pPermission == LoginManager::START_SERVER) {
+			if($this->getPermission(LoginManager::START_SERVER))
+				return true;
+		} else if($pPermission == LoginManager::SERVER_CONFIG) {
+			if($this->getPermission(LoginManager::SERVER_CONFIG))
 				return true;
 		} else {
 			if($this->getPermission($pPermission))
@@ -263,10 +545,11 @@ class LoginManager {
 		$result = $this->databaseManager->getValues($array, 1);
 		
 		if($result != null) {
-			if($this->isSame($result['password'], $pPasswordOld) AND !empty($result['id'])) {
+			if($this->isSame($result['digesta1'], $this->getUsername(), $pPasswordOld) AND !empty($result['id'])) {
 				$id = $result['id'];
+				$password = $this->getSaltedPassword($this->getUsername(), $pPasswordNew);
 				
-				if($this->databaseManager->setValue(Array("password"=>Array("value"=>$pPasswordNew)), Array("id"=>Array("operator"=>"=", "value"=>$id, "type"=>"i"))))				
+				if($this->databaseManager->setValue(Array("digesta1"=>Array("value"=>$password)), Array("id"=>Array("operator"=>"=", "value"=>$id, "type"=>"i"))))				
 				return true;
 			}
 		}
@@ -274,15 +557,247 @@ class LoginManager {
 		return false;
 	}
 	
-	function isSame($pPassword1, $pPassword2) {
-		if($pPassword1 == $pPassword2) {
+	static function getSaltedPassword($pUsername, $pPassword) {
+		global $conf;
+		
+		return md5(strtolower($pUsername) . ':' . $conf['dav_realm'] . ':' . $pPassword);
+	}
+	
+	public function getAuthtokens() {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table2);
+		$databaseAuthtokens->openTable("authtokens", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
+		$resultToken1 = $databaseAuthtokens->getValues($arrayToken);
+		
+		return $resultToken1;
+	}
+	
+	public function getAuthtoken() {
+		if(!empty($_SESSION['authtoken'])) {
+			return $_SESSION['authtoken'];
+		}
+		
+		return "";
+	}
+	
+	public function getAuthtokenInfoById($id) {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table2);
+		$databaseAuthtokens->openTable("authtokens", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
+		$arrayToken['id'] = array('operator'=>'=', 'value'=>$id, 'type'=>'i');
+		$resultToken1 = $databaseAuthtokens->getValues($arrayToken, 1);
+		
+		return $resultToken1;
+	}
+	
+	public function setAuthtokenName($id, $name) {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table2);
+		$databaseAuthtokens->openTable("authtokens", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
+		$arrayToken['id'] = array('operator'=>'=', 'value'=>$id, 'type'=>'i');
+		$resultToken1 = $databaseAuthtokens->setValue(array("name"=>$name), $arrayToken);
+		
+		return $resultToken1;
+	}
+	
+	public function removeAuthtokenById($id) {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table2);
+		$databaseAuthtokens->openTable("authtokens", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
+		$arrayToken['id'] = array('operator'=>'=', 'value'=>$id, 'type'=>'i');
+		$resultToken1 = $databaseAuthtokens->remove($arrayToken);
+		
+		return true;
+	}
+	
+	public function removeAuthtoken($authtoken) {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table2);
+		$databaseAuthtokens->openTable("authtokens", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
+		$arrayToken['authtoken'] = array('operator'=>'=', 'value'=>$authtoken, 'type'=>'s');
+		$resultToken1 = $databaseAuthtokens->remove($arrayToken);
+		
+		return true;
+	}
+	
+	public function removeAllAuthtokens() {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table2);
+		$databaseAuthtokens->openTable("authtokens", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
+		$resultToken1 = $databaseAuthtokens->remove($arrayToken);
+		
+		return true;
+	}
+
+	/* JWT */
+	public function getJwtInfoBySignature($signature, $userid) {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table11);
+		$databaseAuthtokens->openTable("jwt", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$userid, 'type'=>'i');
+		$arrayToken['signature'] = array('operator'=>'=', 'value'=>$signature, 'type'=>'s');
+		$resultToken1 = $databaseAuthtokens->getValues($arrayToken, 1);
+		
+		return $resultToken1;
+	}
+
+	public function addJwtSignature($signature, $name='Endgerät', $userid) {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table11);
+		$databaseAuthtokens->openTable("jwt", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$userid, 'type'=>'i');
+		$arrayToken['signature'] = array('operator'=>'=', 'value'=>$signature, 'type'=>'s');
+		$arrayToken['name'] = array('operator'=>'=', 'value'=>$name, 'type'=>'s');
+		$resultToken1 = $databaseAuthtokens->insertValue($arrayToken);
+		
+		return $resultToken1;
+	}
+
+	public function removeJwtSignature($signature, $userid) {
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table11);
+		$databaseAuthtokens->openTable("jwt", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$userid, 'type'=>'i');
+		$arrayToken['signature'] = array('operator'=>'=', 'value'=>$signature, 'type'=>'s');
+		$resultToken1 = $databaseAuthtokens->remove($arrayToken);
+		
+		return true;
+	}
+	
+	function isSame($pPassword1, $pUsername, $pPassword2) {
+		if($pPassword1 == LoginManager::getSaltedPassword($pUsername, $pPassword2)) {
 			return true;
 		}
 		
 		return false;
 	}
+	
+	function logout() {
+		$authtoken = $_SESSION['authtoken'];
+		$this->removeAuthtoken($authtoken);
+		
+		unset($_SESSION['id']);
+		unset($_SESSION['username']);
+		unset($_SESSION['group']);
+		unset($_SESSION['authtoken']);
+		
+		die('{"action":"logout"}');
+	}
+	
+	function getShareManager() {
+		if(!empty($this->shareManager)) {
+			return $this->shareManager;
+		} else {
+			$this->shareManager = new ShareManager($this->getId());
+			return $this->shareManager;
+		}
+	}
+	
+	private function secure() {
+		if(defined('LOGIN_MANAGER_SET')) {
+			die('Failure 01 - Double call to LoginManager');
+		}
+	}
+}
+
+
+function sync($type) {
+	global $conf;
+	$database = new DatabaseManager();
+	
+	if(!empty($type)) {
+		if($type == USER_PERMISSIONS) {
+			$database->openTable("user_permissions", json_decode(DatabaseManager::$table3));
+			$permissionsDb = $database->getValues();
+			
+			$permissions;
+			
+			if(!empty($permissionsDb))
+			foreach($permissionsDb as $permission) {
+				$user = $permission['userid'];
+				
+				if(!empty($permission['access_files'])) {
+					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::FILE_ACCESS, "value"=>$permission['access_files']);
+				}
+				
+				if(!empty($permission['stop_server'])) {
+					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::STOP_SERVER, "value"=>$permission['stop_server']);
+				}
+				
+				if(!empty($permission['log_access'])) {
+					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::LOG_ACCESS, "value"=>$permission['log_access']);
+				}
+				
+				if(!empty($permission['modify_users'])){
+					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::MODIFY_USERS, "value"=>$permission['modify_users']);
+				}
+				
+				if(!empty($permission['server_notify'])) {
+					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::SERVER_NOTIFY, "value"=>$permission['server_notify']);
+				}
+				
+				if(!empty($permission['start_server'])) {
+					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::START_SERVER, "value"=>$permission['start_server']);
+				}
+			}
+			
+			$json_encoded = json_encode($permissions);
+			
+			syncData($json_encoded, USER_PERMISSIONS);
+		} else if($type == AUTHTOKENS) {
+			$database->openTable("authtokens", json_decode(DatabaseManager::$table2));
+			$authtokens = $database->getValues();
+			
+			$json_encoded = json_encode($authtokens);
+			
+			syncData($json_encoded, AUTHTOKENS);
+		}
+	}
+}
+
+function syncData($data, $type) {
+	global $conf;
+	
+	if(!empty($conf['login_sync_server']) && is_array($conf['login_sync_server']))
+		foreach($conf['login_sync_server'] as $server) {
+		
+		$postdata = http_build_query(
+			array(
+				'data' => $data,
+				'type' => $type,
+				 )
+				);
+				
+				$opts = array('http' =>
+				    array(
+				        'method'  => 'POST',
+				        'header'  => 'Content-type: application/x-www-form-urlencoded',
+				        'content' => $postdata
+				    )
+				);
+				
+				$context  = stream_context_create($opts);
+				
+				$result = @file_get_contents('http://' . $server . '/api.php', false, $context);
+		}
 }
 
 $loginManager = new LoginManager();
+define('LOGIN_MANAGER_SET', TRUE);
 
 ?>
