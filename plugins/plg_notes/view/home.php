@@ -2,32 +2,29 @@
 	$notesArray = $pluginManager->databaseManager->getValues();
 	$notes = null;
 	$noteIds = null;
-	
+	$noteLong = null;
+
+
+	$jUI->add(new JUI\Heading("Notizen"));
+
+
+	$list = new JUI\ListView();
 	foreach($notesArray as $note) {
-		$notes[] = $note['name'];
+		$name = $note['name'];
 		
 		if(empty($note['password'])) {
-			$noteIds[] = "openPlugin('plg_notes', 'notes','" . $note['id'] . "')";
+			$click = new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'notes', $note['id'] );
+			$longClick = new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'notesettings', $note['id'] );
 		} else {
-			$noteIds[] = "openPlugin('plg_notes', 'password','" . $note['id'] . "')";
+			$click = $longClick = new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'password', $note['id'] );
 		}
-	}
-?>
 
-[
-	{
-		"type":"heading",
-		"value":"Notizen"
-	},
-	{
-		"type":"list",
-		"value":<?php echo json_encode($notes); ?>,
-		"click":<?php echo json_encode($noteIds); ?>,
-		"longclick":<?php echo json_encode($noteIds); ?>
-	},
-	{
-		"type":"button",
-		"value":"Neue Notiz erstellen",
-		"click":"openPlugin('plg_notes','addnote','')"
+		$list->addItem($name, $click, $longClick);
 	}
-]
+	$jUI->add($list);
+
+
+	$button = new JUI\Button("Neue Notiz erstellen");
+	$button->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'addnote' ) );
+	$jUI->add($button);
+?>
