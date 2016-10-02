@@ -1,0 +1,30 @@
+{
+	"name":"Nachrichten",
+	"database":
+		[
+			{
+				"name":"id",
+				"type":"integer"
+			},
+			{
+				"name":"name",
+				"type":"varchar",
+				"default":"kein Name"
+			},
+			{
+				"name":"url",
+				"type":"text"
+			},
+			{
+				"name":"image",
+				"type":"text",
+				"default":""
+			}
+		],
+	"tags":
+		[
+			["Nachrichten",["home",""]],
+			["Nachrichten hinzufügen",["addnews",""]],
+			["Nachrichtenquellen",["sources",""]]
+		]
+}
