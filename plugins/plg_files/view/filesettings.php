@@ -20,11 +20,17 @@
 	{ "type":"nl" }, { "type":"nl" },
 	{
 		"type":"button",
-		"value":"Herrunterladen",
+		"value":"Herunterladen",
 		"click":"openMedia('file','%!#|params|#!%')"
 	},
 	{
-		"type":"submit",
-		"value":"Ordner erstellen"
+		"type":"button",
+		"value":"Datei löschen",
+		"click":"openPlugin('<?php echo $pluginManager->getPluginName(); ?>','delete','%!#|params|#!%')"
+	},{"type":"nl"},{"type":"nl"},
+	{
+		"type":"button",
+		"value":"Zurück",
+		"click":"openPlugin('<?php echo $pluginManager->getPluginName(); ?>','home','%!#|params|#!%')"
 	}
 ]
