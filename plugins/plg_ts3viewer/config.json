@@ -1,5 +1,42 @@
 {
 	"name":"Ts3Viewer",
-	"visible":"no",
-	"permissions":[["kick_player",0]]
+	"visible":"yes",
+	"permissions":[["kick_player",0,"Benutzer vom TeamSpeak-Server kicken"],["move_player",0,"Benutzer in anderen Channel verschieben"]],
+	"database":[[
+			{
+				"name":"id",
+				"type":"integer"
+			},
+			{
+				"name":"name",
+				"type":"varchar"
+			},
+			{
+				"name":"type",
+				"type":"varchar"
+			},
+			{
+				"name":"parameter",
+				"type":"varchar"
+			}
+		],[
+			{
+				"name":"id",
+				"type":"integer"
+			},
+			{
+				"name":"type",
+				"type":"integer"
+			},
+			{
+				"name":"client_database_id",
+				"type":"integer"
+			},
+			{
+				"name":"cid",
+				"type":"integer",
+				"default": "0"
+			}
+		]],
+	"notifications":true
 }

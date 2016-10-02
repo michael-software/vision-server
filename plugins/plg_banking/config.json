@@ -13,6 +13,16 @@
 			{
 				"name":"value",
 				"type":"integer"
+			},
+			{
+				"name":"category",
+				"type":"integer",
+				"default": "0"
+			},
+			{
+				"name":"timestamp",
+				"type":"integer",
+				"default":"0"
 			}
 		],
 	"offline":

@@ -4,18 +4,17 @@ class UserManager {
 	private $databaseManager;
 	
 	function __construct () {
-		$json = '[{"type":"int","name":"id"},{"type":"varchar","name":"username"},{"type":"varchar","name":"password"},{"type":"timestamp","name":"timestamp","default":"current_timestamp"}]';
-		$json = json_decode($json);
+		$json = json_decode(DatabaseManager::$table1);
 		
 		$this->databaseManager = new DatabaseManager();
-		$this->databaseManager->openTable("user", $json);
+		$this->databaseManager->openTable("users", $json);
 	}
 	
 	function getUserList() {
 		$pReturn = $this->databaseManager->getValues();
 		
 		for($i = 0; $i < count($pReturn); $i++) {
-			$pReturn[$i]['password'] = md5($pReturn[$i]['password']);
+			$pReturn[$i]['digesta1'] = md5($pReturn[$i]['digesta1']);
 		}
 		
 		return $pReturn;
@@ -38,9 +37,12 @@ class UserManager {
 	
 	function registerUser($pUsername, $pPassword) {
 		global $pluginManager;
+		global $conf;
 		
 		if(empty($this->getUserId($pUsername))) {
-			if( $this->databaseManager->insertValue(Array("username"=>Array("value"=>$pUsername),"password"=>Array("value"=>$pPassword))) ) {
+			$password = md5(strtolower($pUsername) . ':' . $conf['dav_realm'] . ':' . $pPassword);
+			
+			if( $this->databaseManager->insertValue(Array("username"=>Array("value"=>$pUsername),"digesta1"=>Array("value"=>$password))) ) {
 				$id = $this->databaseManager->getInsertId();
 				
 				$json = DatabaseManager::$table3;
@@ -59,7 +61,6 @@ class UserManager {
 							$this->setPermission($id, 'use_' . $pluginId, false);
 						}
 					}
-					
 					return true;
 				}
 			}
@@ -68,7 +69,7 @@ class UserManager {
 		return false;
 	}
 
-	function setPermission($pUserid, $pPermission, $pBool) {
+	function setPermission($pUserid, $pPermission, $pBool, $autosync=TRUE) {
 		global $loginManager;
 		
 		if(!$loginManager->isAllowed(LoginManager::MODIFY_USERS)) {
@@ -82,9 +83,10 @@ class UserManager {
 		
 		$database = new DatabaseManager();
 		
-		if($pPermission == LoginManager::STOP_SERVER || $pPermission == LoginManager::MODIFY_USERS || $pPermission == LoginManager::FILE_ACCESS) {
-			$json = DatabaseManager::$table3;
-			$json = json_decode($json); /* USED TOO LoginManager.php */
+		if($pPermission == LoginManager::STOP_SERVER || $pPermission == LoginManager::MODIFY_USERS || $pPermission == LoginManager::FILE_ACCESS
+				|| $pPermission == LoginManager::LOG_ACCESS || $pPermission == LoginManager::SERVER_NOTIFY || $pPermission == LoginManager::START_SERVER
+				|| $pPermission == LoginManager::SERVER_CONFIG) {
+			$json = json_decode(DatabaseManager::$table3);
 			$database->openTable("user_permissions", $json);
 			
 			if($pPermission == LoginManager::STOP_SERVER) {
@@ -93,14 +95,32 @@ class UserManager {
 				}
 			} else if($pPermission == LoginManager::MODIFY_USERS) {
 				if( $database->setValue(Array("modify_users"=>Array("value"=>$pInput)), Array("userid"=>Array("value"=>$pUserid))) ) {
-					echo $database->getErrors();
 					return true;
 				}
 			} else if($pPermission == LoginManager::FILE_ACCESS) {
 				if( $database->setValue(Array("access_files"=>Array("value"=>$pInput,"type"=>"i")), Array("userid"=>Array("value"=>$pUserid,"type"=>"i"))) ) {
 					return true;
 				}
+			} else if($pPermission == LoginManager::LOG_ACCESS) {
+				if( $database->setValue(Array("log_access"=>Array("value"=>$pInput,"type"=>"i")), Array("userid"=>Array("value"=>$pUserid,"type"=>"i"))) ) {
+					return true;
+				}
+			} else if($pPermission == LoginManager::SERVER_NOTIFY) {
+				if( $database->setValue(Array("server_notify"=>Array("value"=>$pInput,"type"=>"i")), Array("userid"=>Array("value"=>$pUserid,"type"=>"i"))) ) {
+					return true;
+				}
+			} else if($pPermission == LoginManager::START_SERVER) {
+				if( $database->setValue(Array("start_server"=>Array("value"=>$pInput,"type"=>"i")), Array("userid"=>Array("value"=>$pUserid,"type"=>"i"))) ) {
+					return true;
+				}
+			} else if($pPermission == LoginManager::SERVER_CONFIG) {
+				if( $database->setValue(Array("server_config"=>Array("value"=>$pInput,"type"=>"i")), Array("userid"=>Array("value"=>$pUserid,"type"=>"i"))) ) {
+					return true;
+				}
 			}
+			
+			if($autosync)
+				sync(USER_PERMISSIONS);
 		} else if(!empty($pPermission)) {
 			$json = DatabaseManager::$table4;
 			$json = json_decode($json);

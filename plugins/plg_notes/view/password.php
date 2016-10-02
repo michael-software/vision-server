@@ -1,28 +1,25 @@
 <?php
 if(!empty($_POST['notePassword']) && !empty($_POST['noteId']))
-die('{"redirect":["plg_notes", "notes", "' . $_POST['noteId'] . '/' . $_POST['notePassword'] . '"]}');
-?>
+$pluginManager->redirect( $pluginManager, 'notes', $_POST['noteId'] . '/' . LoginManager::getSaltedPassword($loginManager->getUsername(), $_POST['notePassword']) );
 
-[
-	{
-		"type":"heading",
-		"value":"Anmeldung für Notiz"
-	},
-	{
-		"type":"input",
-		"value":"%!#|params|#!%",
-		"name":"noteId",
-		"visible":"away"
-	},
-	{
-		"type":"input",
-		"name":"notePassword",
-		"label":"Kennwort"
-	},
-	{ "type":"nl" },{ "type":"nl" },
-	{
-		"type":"submit",
-		"url":["plg_notes","notes","%!#|params|#!%"],
-		"value":"Speichern"
-	}
-]
+$noteId = $pluginManager->getCommand(0);
+
+$jUI->add( new JUI\Heading("Anmeldung für Notiz") );
+
+$idInput = new JUI\Input("noteId");
+$idInput->setValue( $noteId );
+$idInput->setVisible( JUI\View::GONE );
+$jUI->add($idInput);
+
+$password = new JUI\Input("notePassword");
+$password->setLabel("Kennwort");
+$password->setPreset( JUI\Input::PASSWORD );
+$jUI->add($password);
+
+$jUI->nline(2);
+
+$submit = new JUI\Button("Speichern");
+$submit->setClick( new JUI\Click( JUI\Click::submit ) );
+$jUI->add( $submit );
+
+?>

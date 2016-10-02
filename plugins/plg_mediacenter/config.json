@@ -1,0 +1,6 @@
+{
+	"name":"Mediacenter",
+	"visible":"no",
+	"filesystem":true,
+	"notifications":true
+}

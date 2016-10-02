@@ -1,7 +1,7 @@
 [
 	{
 		"type":"frame",
-		"src":"http://192.168.2.108:8087",
+		"src":"http://<?php echo $pluginManager->getUrl(); ?>:8087",
 		"width":"100%",
 		"height":"100%"
 	}

@@ -1,3 +1,9 @@
-<Files ./ajax.php>
-	XSendFile on
-</Files>
+RewriteEngine On
+    # This makes every request go to server.php
+RewriteRule ^/(.*)$ /webdav/index.php [L]
+
+
+#<Directory "/webdav/">
+#	LimitRequestBody 2147483647
+
+#</Directory>
