@@ -1,0 +1,6 @@
+{
+	"name":"Musik",
+	"visible":"yes",
+	"filesystem":true,
+	"notifications":true
+}
