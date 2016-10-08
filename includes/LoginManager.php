@@ -30,6 +30,7 @@ class LoginManager {
 	private $user = array();
 	private $revalidate = true;
 	private $jwtManager = null;
+	private $secret = 'secret';
 	
 	public function __construct() {
 		$this->jwtManager = new JwtManager();
@@ -82,8 +83,8 @@ class LoginManager {
 			$jwtRequest = substr($_SERVER['HTTP_AUTHORIZATION'], 7);
 			$data = $this->jwtManager->getJwtData($jwtRequest);
 
-			if(!empty($data->sub) && $this->jwtManager->validateJwt($jwtRequest, 'secret') == 2) {
-				$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, 'secret', array('sub'=>$data->sub), 60);
+			if(!empty($data->sub) && $this->jwtManager->validateJwt($jwtRequest, $this->secret) == 2) {
+				$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, $this->secret, array('sub'=>$data->sub), 60);
 				$jwtSignature = $this->jwtManager->getSignature($jwt);
 
 				$this->addJwtSignature($jwtSignature, $name='Endgerät', $data->sub);
@@ -104,12 +105,16 @@ class LoginManager {
 	}
 
 	function proofJwt($jwtRequest) {
-		if($this->jwtManager->validateJwt($jwtRequest, 'secret') == 2) {
+		if($this->jwtManager->validateJwt($jwtRequest, $this->secret) == 2) {
 			$data = $this->jwtManager->getJwtData($jwtRequest);
 
 			$_SESSION['id'] = $data->sub;
 			$this->user["id"] = $data->sub;
 			$this->user["username"] = $data->name;
+
+			if(!empty($data->_sek)) {
+				$this->user['key'] = $data->_sek;
+			}
 
 			$jwtInfo =  $this->getJwtInfoBySignature( $this->jwtManager->getSignature($jwtRequest), $data->sub);
 
@@ -119,7 +124,7 @@ class LoginManager {
 				header("HTTP/1.1 401 Unauthorized");
 				die('{"head":{"status":401}}');
 			}
-		} else if($this->jwtManager->validateJwt($jwtRequest, 'secret') != 1) {
+		} else if($this->jwtManager->validateJwt($jwtRequest, $this->secret) != 1) {
 			header("HTTP/1.1 401 Unauthorized");
 			die('{"head":{"status":401}}');
 		} else {
@@ -128,6 +133,10 @@ class LoginManager {
 			$_SESSION['id'] = $data->sub;
 			$this->user["id"] = $data->sub;
 			$this->user["username"] = $data->name;
+
+			if(!empty($data->_sek)) {
+				$this->user['key'] = $data->_sek;
+			}
 
 			$this->revalidate = false;
 		}
@@ -175,7 +184,7 @@ class LoginManager {
 	    }*/
 
 		$jwtManager = new JwtManager();
-		$token = $jwtManager->createJwt($pUsername, $pPassword, 'secret', array('sub'=>$userid), 60);
+		$token = $jwtManager->createJwt($pUsername, $pPassword, $this->secret, array('sub'=>$userid), 60);
 		
 		$this->addSecurityToken($token, $name);
 		$this->addJwtSignature($jwtManager->getSignature($token), $name, $userid);
@@ -310,7 +319,7 @@ class LoginManager {
 		global $logManager;
 
 		$data = $this->jwtManager->getJwtData($jwt);
-		$validate = $this->jwtManager->validateJwt($jwt, 'secret');
+		$validate = $this->jwtManager->validateJwt($jwt, $this->secret);
 		if($validate == 1 || $validate == 2) {
 
 			if($validate == 2) {
@@ -466,6 +475,50 @@ class LoginManager {
 		} else if(!empty($this->user["id"])) {
 			return $this->user["id"];
 		}
+	}
+
+	function getEncryptionKey() {
+		global $pluginManager;
+
+		require_once dirname(__FILE__) . '/CryptManager.php';
+
+		if(!empty($this->user['key'])) {
+			$key = $this->getPluginEncryptionKey($pluginManager->getPluginName(), $this->user['key']);
+
+			if(empty($key) || empty($key['key'])) {
+				return null;
+			}
+
+			return $pluginManager->getCryptManager()->unlockAsciiKey($key['key'], $this->user['key']);
+		}
+
+		return null;
+	}
+
+	private function getPluginEncryptionKey($pluginName, $key) {
+		global $pluginManager;
+		require_once dirname(__FILE__) . '/CryptManager.php';
+
+		$databaseAuthtokens = new DatabaseManager();
+		$json = json_decode(DatabaseManager::$table12);
+		$databaseAuthtokens->openTable("keys", $json);
+		
+		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
+		$arrayToken['plugin'] = array('operator'=>'=', 'value'=>$pluginName, 'type'=>'s');
+		$resultToken1 = $databaseAuthtokens->getValues($arrayToken, 1);
+		
+		if(empty($resultToken1)) {
+			$asciiKey = $pluginManager->getCryptManager()->getPwKey($key)->saveToAsciiSafeString();
+
+			$arrayToken['key'] = array('operator'=>'=', 'value'=>$asciiKey, 'type'=>'s');
+			if($databaseAuthtokens->insertValue($arrayToken)) {
+				return array("user"=>$this->getId(), "plugin"=>$pluginName, "key"=>$asciiKey);
+			}
+
+			return null;
+		}
+
+		return $resultToken1;
 	}
 	
 	function getPermission($pPermission) {

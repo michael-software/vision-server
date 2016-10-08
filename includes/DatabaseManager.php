@@ -22,7 +22,8 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 		public static $table9  = '[{"type":"int","name":"id"},{"type":"varchar","name":"plugin","default":"file"},{"type":"text","name":"views"},{"type":"text","name":"parameter"},{"type":"varchar","name":"password","default":""},{"type":"int","name":"user"}]'; // Sharekey table
 		public static $table10 = '[{"type":"int","name":"id"},{"type":"varchar","name":"name","default":""},{"type":"text","name":"value"},{"type":"varchar","name":"plugin","default":""}]'; // PluginStorage table
 		public static $table11  = '[{"type":"int","name":"id"},{"type":"varchar","name":"name"},{"type":"varchar","name":"signature"},{"type":"int","name":"user"},{"type":"int","name":"refused","default":"0"},{"type":"timestamp","name":"timestamp","default":"current_timestamp"}]'; // JWT Tokens
-		
+		public static $table12  = '[{"type":"int","name":"id"},{"type":"text","name":"key"},{"type":"varchar","name":"plugin"},{"type":"int","name":"user"}]'; // Keys
+
 
 		function __construct() 
 		{
@@ -538,6 +539,7 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 				$userTable[] = $this->praefix.'_logs';
 				$userTable[] = $this->praefix.'_share';
 				$userTable[] = $this->praefix.'_jwt';
+				$userTable[] = $this->praefix.'_keys';
 			} else {
 				$userTable[] = 'users';
 				$userTable[] = 'authtokens';
@@ -547,6 +549,7 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 				$userTable[] = 'logs';
 				$userTable[] = 'share';
 				$userTable[] = 'jwt';
+				$userTable[] = 'keys';
 			}
 			
 			if( in_array($this->table, $userTable) ) {
