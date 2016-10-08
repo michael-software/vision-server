@@ -24,6 +24,7 @@ class PluginManager {
 	private $wolPort = "3685"; // you can choose any port. You need a server that run the WolServer (found on GitHub)
 	private $wolHost = ""; // only use the IP-Address or Hostname. No Protocol!! (e.g. allowed: 192.165.72.54, example.org, wol.example.org; forbidden: http://example.org, 45.45.48.68/, example.org/). It's set to your Ip if an IpService is set. It's important that you can access this Url from the WWW.
 	private $basedir = './';
+	private $cryptManager;
 	
 	const TYPE_FILE = 1;
 	const TYPE_STRING = 2;
@@ -65,6 +66,11 @@ class PluginManager {
 			} else if(!empty($this->config->database[0][0]->name)) {
 				$this->databaseManager->openTables($pPlugin, $this->config->database);
 			}
+		}
+
+		if(!empty($this->config->useCryptManager) && $this->config->useCryptManager == true) {
+			require_once dirname(__FILE__) . '/CryptManager.php';
+			$this->cryptManager = new CryptManager();
 		}
 		
 		if(!empty($this->config->filesystem) && $this->config->filesystem && constant('WEBSOCKET') != 1) {
@@ -580,6 +586,10 @@ class PluginManager {
 	
 	function getNotificationManager() {
 		return $this->notificationManager;
+	}
+
+	function getCryptManager() {
+		return $this->cryptManager;
 	}
 	
 	function getMainPlugins() {
