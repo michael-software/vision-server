@@ -639,12 +639,13 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 			function loginWithToken() {
 				var authToken = getStorage("token");
 				
-				$.post(
-					"ajax.php?action=login",
-					{
-						token: authToken
+				$.ajax({
+					type: 'GET',
+					url: "api/login.php",
+					beforeSend: function (xhr) {
+						xhr.setRequestHeader ("Authorization", "bearer " + authToken);
 					}
-				).done(function( data ) {
+				}).done(function( data ) {
 					parseLoginToken(data);
 				});
 			}
