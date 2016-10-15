@@ -671,7 +671,7 @@ function loadPlugin(pName, pPage, pCommand) {
 		pCommand = '';
 	}
 	
-	urlString = 'api/plugin.php?plugin=' + pName + '&page=' + pPage + '&cmd=' + pCommand + '&get=view';
+	urlString = 'api/plugin.php?plugin=' + pName + '&page=' + pPage + '&cmd=' + pCommand;
 	if (getStorage('share') != null && getStorage('share') != "") {
 		urlString += '&share=' + getStorage('share');
 	}

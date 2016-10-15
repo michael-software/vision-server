@@ -3,6 +3,8 @@ function GuiPage() {
 	this.root = null;
 	this.padding = 10;
 	this.paddingLeft = 10;
+
+	var _tools = window.jui.tools;
 	
 	function GuiPage(pRoot) {
 		if(pRoot == null) {
@@ -23,6 +25,14 @@ function GuiPage() {
 		window.jui.action.addAction('openMedia', openMedia);
 
 		window.jui.addOnBeforeParseListener(beforeParseListener);
+
+		window.jui.setSubmitCallback(function(formData, name, element) {
+			if(element.classList.contains('editor') && element.querySelector('.html') != null) {
+				if(!_tools.empty(element.querySelector('.html').innerHTML)) {
+					formData.append(name, element.querySelector('.html').innerHTML);
+				}
+			}
+		});
 
 		setHeaders();
 	}
@@ -241,6 +251,7 @@ function GuiPage() {
 	};
 }
 
+/*
 var Editor = (function(pJson) {
 	var outer = jQuery('<div/>', {
 		class: "editor"
@@ -349,7 +360,7 @@ var Editor = (function(pJson) {
 	};
 	
 	return Editor(pJson);
-});
+});*/
 
 
 window.buttonlist = (function (jsonObject) {
@@ -470,7 +481,15 @@ window.editor = (function(pJson) {
 		
 		return {
 			getDomElement: function() {
-				return outer.append(control).append(contentArea).get(0);
+				var element =  outer.append(control).append(contentArea).get(0);
+
+				window.jui.views.view.addProperties(element, pJson);
+
+				element.style.height = 'auto';
+
+				window.jui.registerSubmitElement(pJson['name'], element);
+
+				return window.jui.views.view.addInputProperties(element, pJson);
 			}
 		};
 	};

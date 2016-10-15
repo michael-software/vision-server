@@ -200,9 +200,9 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 			global $loginManager;
 			
 			if(!$this->isServerTable()) {
-				$sql = 'SELECT * FROM ' . $this->table . ' WHERE user=\'' . $loginManager->getId() . '\'';
+				$sql = 'SELECT * FROM `' . $this->table . '` WHERE user=\'' . $loginManager->getId() . '\'';
 			} else {
-				$sql = 'SELECT * FROM ' . $this->table . ' WHERE 1=1';
+				$sql = 'SELECT * FROM `' . $this->table . '` WHERE 1=1';
 			}
 			
 			$result = $this->db->query($sql);
@@ -231,9 +231,9 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 			global $loginManager;
 			
 			if(!$this->isServerTable()) {
-				$sql = 'SELECT * FROM ' . $this->table . ' WHERE user=\'' . $loginManager->getId() . '\'';
+				$sql = 'SELECT * FROM `' . $this->table . '` WHERE user=\'' . $loginManager->getId() . '\'';
 			} else {
-				$sql = 'SELECT * FROM ' . $this->table . ' WHERE 1=1';
+				$sql = 'SELECT * FROM `' . $this->table . '` WHERE 1=1';
 			}
 			
 			$array = null;
@@ -352,7 +352,7 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 		private function setValue2($pArray, $pOperator) {
 			global $loginManager;
 			
-			$sql = 'UPDATE ' . $this->table . '';
+			$sql = 'UPDATE `' . $this->table . '`';
 			
 			$array = null;
 			$types = ''; /* TODO */
@@ -438,7 +438,7 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 		private function insertValue1($pArray) {
 			global $loginManager;
 			
-				$sql = 'INSERT INTO ' . $this->table . ' ( ';
+				$sql = 'INSERT INTO `' . $this->table . '` ( ';
 				
 				$array = null;
 				$types = ''; /* TODO */
@@ -581,9 +581,9 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 			global $loginManager;
 			
 			if(!$this->isServerTable()) {
-				$sql = 'DELETE FROM ' . $this->table . ' WHERE user=\'' . $loginManager->getId() . '\'';
+				$sql = 'DELETE FROM `' . $this->table . '` WHERE user=\'' . $loginManager->getId() . '\'';
 			} else {
-				$sql = 'DELETE FROM ' . $this->table . ' WHERE 1=1';
+				$sql = 'DELETE FROM `' . $this->table . '` WHERE 1=1';
 			}
 			
 			$array = null;

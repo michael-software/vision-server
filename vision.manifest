@@ -1,0 +1,15 @@
+CACHE MANIFEST
+# 2016-10-08:v1 (YYYY-MM-DD)
+
+CACHE:
+styles/general.css
+scripts/general.js
+scripts/jquery-2.1.4.min.js
+offline.html
+
+NETWORK:
+index.html
+*
+
+FALLBACK:
+offline.html
