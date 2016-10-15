@@ -5,6 +5,7 @@ function GuiPage() {
 	this.paddingLeft = 10;
 
 	var _tools = window.jui.tools;
+	var _body = document.querySelector('body');
 	
 	function GuiPage(pRoot) {
 		if(pRoot == null) {
@@ -64,8 +65,6 @@ function GuiPage() {
 	}
 
 	function parseHead (pJson) {
-		console.log(pJson);
-
 		if ( !window.jui.tools.empty(pJson['jwt']) ) {
 			setStorage('token', pJson['jwt']);
 			window.token = pJson['jwt'];
@@ -73,7 +72,7 @@ function GuiPage() {
 		}
 
 		if (pJson['bgcolor'] != null) {
-			$('body').css("background-color", pJson['bgcolor']);
+			_body.style.backgroundColor = pJson['bgcolor'];
 		}
 		
 		if (pJson['share'] != null && pJson['share']['name'] != null) { /* TODO */
@@ -95,54 +94,7 @@ function GuiPage() {
 		}
 	};
 	
-	function insertRange(pJson) {
-		if(pJson['name'] != null) {
-			var el = jQuery('<input/>', {
-				type: 'range',
-				name: pJson['name']
-			});
-			
-			if(pJson['min'] != null) {
-				el.attr('min', pJson['min']);
-			}
-			
-			if(pJson['max'] != null) {
-				el.attr('max', pJson['max']);
-			}
-			
-			if(pJson['value'] != null) {
-				el.val(pJson['value']);
-			}
-			
-			if(pJson['change'] != null) {
-				el.change(function () {
-					var response = new Object();
-					response.plugin = getPlugin();
-					response.action = pJson['change'];
-					response.value = $( this ).val();
-					
-					socket.send(JSON.stringify(response));
-				});
-			}
-			
-			
-			if(pJson['label'] != null) {
-				var lab = jQuery('<label/>', {
-					text: pJson['label']
-				});
-				
-				jQuery('<br/>', {}).appendTo(lab);
-				el.appendTo(lab);
-				
-				return lab;
-			}
-			
-			return el;
-		}
-		
-		return null;
-	}
-	
+	/*
 	function serialize(element) {
 		var fd = new FormData();   
 		
@@ -177,190 +129,8 @@ function GuiPage() {
 		});
 		
 		return fd;
-	}
-	
-	function insertButtonList(pJson) {
-		if(pJson['value'] != null) {
-			var value = pJson['value'];
-			
-			var div = jQuery('<div/>', { class: 'buttonlist' });
-			
-			for(var i = 0; i < value.length; i++) {
-				var image   = value[i]['value'][0];
-				var textVal = value[i]['value'][1];
-				
-				var tile = jQuery('<div/>', {
-				});
-				
-				if(image == null || image == 'undefined') image = placeholder;
-				var img = jQuery('<img/>', {
-					src: image
-				});
-				img.appendTo(tile);
-				
-				
-				var name = jQuery('<p/>', {
-					text: textVal
-				});
-				name.appendTo(tile);
-				
-				
-				if(value[i]['click'] != null && value[i]['click'] != null && value[i]['click'][i] != "") {
-					tile.css('cursor','pointer');
-					tile.click(new Function(value[i]['click']));
-				} else {
-					tile.css('cursor','default');
-				}
-				
-				if(value[i]['longclick'] != null && value[i]['longclick'][i] != null && value[i]['longclick'][i] != "") {
-					var __this = i;
-					tile.get( 0 ).oncontextmenu = new Function(value[i]['longclick']);
-					tile.on('contextmenu', function(e) {
-						e.stopPropagation();
-						e.preventDefault();
-					});
-				}
-				
-				tile.appendTo(div);
-			}
-			
-			return div;
-		}
-		
-		return null;
-	}
-	
-	function insertEditor(pJson) {
-		var editor = new Editor(pJson);
-		
-		/*
-		if(pJson['label'] != null) {
-			var lab = jQuery('<label/>', {
-				text: pJson['label']
-			});
-			
-			jQuery('<br/>', {}).appendTo(lab);
-			el.appendTo(lab);
-		}*/
-		
-		return editor.create();
-	}
-	
-	this.getRoot = function() {
-		return root;
-	};
+	}*/
 }
-
-/*
-var Editor = (function(pJson) {
-	var outer = jQuery('<div/>', {
-		class: "editor"
-	});
-	
-	var control = jQuery('<div/>', {
-		class: "control"
-	});
-	
-	var contentArea = jQuery('<div/>', {
-		name: pJson['name'],
-		class: "html"
-	});
-	
-	
-	var Editor = function(pJson) {
-		createControls();
-		createContentArea(pJson);
-		
-		return {
-			create: function() {
-				return outer.append(control).append(contentArea);
-			}
-		};
-	};
-	
-	var createContentArea = function (pJson) {
-		if(pJson['value'] != null) {
-			var value = pJson['value'];
-			value = value.replace(/<(.*)script(.*)>(.*)<(.*)\/(.*)script(.*)>/g, '&lt;$1script$2&gt;$3&lt;$4/$5script$6&gt;');
-			contentArea.html(value);
-		}
-			
-		if(pJson['focus'] != null && pJson['focus']) {
-			contentArea.attr("autofocus", "autofocus");
-		}
-			
-		contentArea.attr("contenteditable", "true");
-	};
-	
-	var createControls = function () {
-		var bold = jQuery('<button/>', {
-			class: "bold",
-			text: "b"
-		}).click( function() {
-			document.execCommand ('bold', false, null);
-		});
-		
-		var italic = jQuery('<button/>', {
-			class: "italic",
-			text: "i"
-		}).click( function() {
-			document.execCommand ('italic', false, null);
-		});
-		
-		var underlined = jQuery('<button/>', {
-			class: "underlined",
-			html: "<u>u</u>"
-		}).click( function() {
-			document.execCommand ('underline', false, null);
-		});
-		
-		
-		
-		var left = jQuery('<button/>', {
-			class: "underlined",
-			html: "Links"
-		}).click( function() {
-			document.execCommand ('justifyLeft', false, null);
-		});
-		
-		var center = jQuery('<button/>', {
-			html: "Mittig"
-		}).click( function() {
-			document.execCommand ('justifyCenter', false, null);
-		});
-		
-		var right = jQuery('<button/>', {
-			html: "Rechts"
-		}).click( function() {
-			document.execCommand ('justifyRight', false, null);
-		});
-		
-		var full = jQuery('<button/>', {
-			html: "Blocksatz"
-		}).click( function() {
-			document.execCommand ('justifyFull', false, null);
-		});
-		
-		
-		var orderedList = jQuery('<button/>', {
-			html: "Sortierte Liste"
-		}).click( function() {
-			document.execCommand ('insertOrderedList', false, null);
-		});
-		
-		var unorderedList = jQuery('<button/>', {
-			html: "Unsortierte Liste"
-		}).click( function() {
-			document.execCommand ('insertUnorderedList', false, null);
-		});
-		
-		control.append(bold).append(italic).append(underlined);
-		control.append(left).append(center).append(right).append(full);
-		control.append(orderedList).append(unorderedList);
-	};
-	
-	return Editor(pJson);
-});*/
 
 
 window.buttonlist = (function (jsonObject) {
@@ -461,18 +231,15 @@ window.buttonlist = (function (jsonObject) {
 window.editor = (function(pJson) {
 	var _this = window.editor;
 
-	var outer = jQuery('<div/>', {
-		class: "editor"
-	});
+	var outer = document.createElement('div');
+		outer.className = 'editor';
 	
-	var control = jQuery('<div/>', {
-		class: "control"
-	});
-	
-	var contentArea = jQuery('<div/>', {
-		name: pJson['name'],
-		class: "html"
-	});
+	var control = document.createElement('div');
+		control.className = 'control';
+
+	var contentArea = document.createElement('div');
+		contentArea.name = pJson['name'];
+		contentArea.className = 'html';
 	
 	
 	var Editor = function(pJson) {
@@ -481,7 +248,9 @@ window.editor = (function(pJson) {
 		
 		return {
 			getDomElement: function() {
-				var element =  outer.append(control).append(contentArea).get(0);
+				var element =  outer;
+					element.appendChild(control);
+					element.appendChild(contentArea);
 
 				window.jui.views.view.addProperties(element, pJson);
 
@@ -498,81 +267,88 @@ window.editor = (function(pJson) {
 		if(pJson['value'] != null) {
 			var value = pJson['value'];
 			value = value.replace(/<(.*)script(.*)>(.*)<(.*)\/(.*)script(.*)>/g, '&lt;$1script$2&gt;$3&lt;$4/$5script$6&gt;');
-			contentArea.html(value);
+			contentArea.innerHTML = value;
 		}
 			
 		if(pJson['focus'] != null && pJson['focus']) {
-			contentArea.attr("autofocus", "autofocus");
+			contentArea.setAttribute("autofocus", "autofocus");
 		}
 			
-		contentArea.attr("contenteditable", "true");
+		contentArea.setAttribute("contenteditable", "true");
 	};
 	
 	var createControls = function () {
-		var bold = jQuery('<button/>', {
-			class: "bold",
-			text: "b"
-		}).click( function() {
-			document.execCommand ('bold', false, null);
-		});
+		var bold = document.createElement('button');
+			bold.className = 'bold';
+			bold.innerHTML = 'b';
+			bold.addEventListener('click', function() {
+				document.execCommand ('bold', false, null);
+			}, false);
+		control.appendChild(bold);
 		
-		var italic = jQuery('<button/>', {
-			class: "italic",
-			text: "i"
-		}).click( function() {
-			document.execCommand ('italic', false, null);
-		});
+		var italic = document.createElement('button');
+			italic.className = 'italic';
+			italic.innerHTML = 'i';
+			italic.addEventListener('click', function() {
+				document.execCommand ('italic', false, null);
+			}, false);
+		control.appendChild(italic);
 		
-		var underlined = jQuery('<button/>', {
-			class: "underlined",
-			html: "<u>u</u>"
-		}).click( function() {
-			document.execCommand ('underline', false, null);
-		});
+		var underlined = document.createElement('button');
+			underlined.className = 'underlined';
+			underlined.innerHTML = '<u>u</u>';
+			underlined.addEventListener('click', function() {
+				document.execCommand ('underline', false, null);
+			}, false);
+		control.appendChild(underlined);
+
+
+
+
+		var left = document.createElement('button');
+			left.innerHTML = 'Links';
+			left.addEventListener('click', function() {
+				document.execCommand ('justifyLeft', false, null);
+			}, false);
+		control.appendChild(left);
+
+		var center = document.createElement('button');
+			center.innerHTML = 'Mittig';
+			center.addEventListener('click', function() {
+				document.execCommand ('justifyCenter', false, null);
+			}, false);
+		control.appendChild(center);
+
+		var right = document.createElement('button');
+			right.innerHTML = 'Rechts';
+			right.addEventListener('click', function() {
+				document.execCommand ('justifyRight', false, null);
+			}, false);
+		control.appendChild(right);
 		
+		var full = document.createElement('button');
+			full.innerHTML = 'Blocksatz';
+			full.addEventListener('click', function() {
+				document.execCommand ('justifyFull', false, null);
+			}, false);
+		control.appendChild(full);
+
 		
-		
-		var left = jQuery('<button/>', {
-			class: "underlined",
-			html: "Links"
-		}).click( function() {
-			document.execCommand ('justifyLeft', false, null);
-		});
-		
-		var center = jQuery('<button/>', {
-			html: "Mittig"
-		}).click( function() {
-			document.execCommand ('justifyCenter', false, null);
-		});
-		
-		var right = jQuery('<button/>', {
-			html: "Rechts"
-		}).click( function() {
-			document.execCommand ('justifyRight', false, null);
-		});
-		
-		var full = jQuery('<button/>', {
-			html: "Blocksatz"
-		}).click( function() {
-			document.execCommand ('justifyFull', false, null);
-		});
-		
-		
-		var orderedList = jQuery('<button/>', {
-			html: "Sortierte Liste"
-		}).click( function() {
-			document.execCommand ('insertOrderedList', false, null);
-		});
-		
-		var unorderedList = jQuery('<button/>', {
-			html: "Unsortierte Liste"
-		}).click( function() {
-			document.execCommand ('insertUnorderedList', false, null);
-		});
-		
-		control.append(bold).append(italic).append(underlined);
-		control.append(left).append(center).append(right).append(full);
-		control.append(orderedList).append(unorderedList);
+
+
+		var orderedList = document.createElement('button');
+			orderedList.innerHTML = 'Sortierte Liste';
+			orderedList.addEventListener('click', function() {
+				document.execCommand ('insertOrderedList', false, null);
+			}, false);
+		control.appendChild(orderedList);
+
+		var unorderedList = document.createElement('button');
+			unorderedList.innerHTML = 'Unsortierte Liste';
+			unorderedList.addEventListener('click', function() {
+				document.execCommand ('insertUnorderedList', false, null);
+			}, false);
+		control.appendChild(unorderedList);
 	};
 	
 	return Editor(pJson);

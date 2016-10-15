@@ -7,7 +7,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 ?>
 
 <!-- <html manifest="vision.manifest"> -->
-<html>
+<html manifest="cache.manifest">
 	<head>
 		<link rel="icon" href="images/vision_icon.png" type="image/x-icon" />
 		
@@ -485,7 +485,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 			}
 		}
 		</style>
-		
+
 		<script>
 			var socket;
 			var isShared = false;
@@ -503,20 +503,22 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 				return hash;
 			}
 			
-			addElementHead('scripts/jquery-2.1.4.min.js', 'JS', function() {
-				var hash = getHash();
-				hash = hash.split('/');
-				
-				if(hash[0] == 'share') {
-					$("#login").css('display', 'none');
-					loginShare(hash[1]);
-				} else if (getStorage('share') != null && getStorage('share') != "") {
-					$("#login").css('display', 'none');
-					loginShare(getStorage('share'));
-				} else {
-					loginUser();
-				}
-			});
+			//addElementHead('scripts/jquery-2.1.4.min.js', 'JS', function() {
+				addElementHead('scripts/output.js', 'JS', function() {
+					var hash = getHash();
+					hash = hash.split('/');
+					
+					if(hash[0] == 'share') {
+						document.querySelector("#login").style.display = 'none';
+						loginShare(hash[1]);
+					} else if (getStorage('share') != null && getStorage('share') != "") {
+						document.querySelector("#login").style.display = 'none';
+						loginShare(getStorage('share'));
+					} else {
+						loginUser();
+					}
+				});
+			//});
 			
 			function isNormalInteger(str) {
 			    var n = ~~Number(str);
@@ -524,14 +526,12 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 			}
 			
 			function loginShare(shareCode) {
-				$.post(
-					"ajax.php?action=login",
-					{
-						share: shareCode
-					},
-					function (data) {
-						parseShareLogin(data);
-					});
+				var formData = new FormData();
+				formData.append('share', shareCode);
+
+				window.jui.tools.requestSite("ajax.php?action=login", formData, null, function (data) {
+					parseShareLogin(data);
+				});
 			}
 			
 			function parseShareLogin(data) {
@@ -543,7 +543,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 					setStorage("share",json.share);
 					location.hash = json.hash;
 					
-					loadJs();
+					loadJui();
 				} else if(json.status != null && json.status != "" && json.status == 'notloggedin') {
 					loginUser();
 					location.hash = '';
@@ -554,7 +554,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 				var token = getStorage("token");
 				
 				if(token != null && token != "") {
-					$("#login").css('display', 'none');
+					document.querySelector("#login").style.display = 'none';
 					loginWithToken(token);
 				} else {
 					openLogin();
@@ -603,22 +603,22 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 			function openLogin() {
 				document.querySelector('#loader').classList.remove('loaded')
 
-				$("#login").css('display', 'block');
+				document.querySelector("#login").style.display = 'block';
 				changeLoadingStatus('Anmeldung');
 				
-				var frm = $("#login form");
+				var frm = document.querySelector("#login form");
 				
-				frm.submit(function (ev) {
-					$.ajax({
-						type: frm.attr('method'),
-						url: frm.attr('action'),
-						data: frm.serialize(),
-						success: function (data) {
-							parseLogin(data);
-						}
+				frm.addEventListener('submit', function (ev) {
+					ev.preventDefault();
+
+					var formData = new FormData();
+						formData.append('username', document.querySelector('#username-login').value);
+						formData.append('password', document.querySelector('#password-login').value);
+
+					window.jui.tools.requestSite('ajax.php?action=login', formData, null, function (data) {
+						parseLogin(data);
 					});
-				ev.preventDefault();
-				});
+				}, false);
 			}
 			
 			function parseLogin(data) {
@@ -629,7 +629,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 						setStorage("token", json.token);
 						setStorage("username", json.username);
 						loginWithToken();
-						$("#login").fadeOut();
+						document.querySelector("#login").style.display = 'none';
 					}
 				} else {
 					alert("Fehler");
@@ -639,14 +639,18 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 			function loginWithToken() {
 				var authToken = getStorage("token");
 				
-				$.ajax({
-					type: 'GET',
-					url: "api/login.php",
-					beforeSend: function (xhr) {
-						xhr.setRequestHeader ("Authorization", "bearer " + authToken);
+				window.jui.tools.requestSite("api/login.php", null, [
+					{
+						name: 'Authorization',
+						value: 'bearer ' + authToken
 					}
-				}).done(function( data ) {
-					parseLoginToken(data);
+				], function( data, status ) {
+					if (status == 401) {
+						cleanLogin();
+						openLogin();
+					} else {
+						parseLoginToken(data);
+					}
 				});
 			}
 			
@@ -657,7 +661,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 					if(json.status == "login") {
 						if(json.username != null && json.username != "") {
 							setStorage("username", json.username);
-							loadJs();
+							loadJui();
 						}
 						
 						if(json.mainplugins != null && json.mainplugins != "") {
@@ -685,7 +689,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 						}
 
 						window.token = getStorage('token');
-					} else if(json.status == "needlogin" || json.status == "notloggedin") {
+					} else if(json.status == 401) {
 						cleanLogin();
 						openLogin();
 					}
@@ -820,23 +824,25 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 			function changeLoadingStatus(pString) {
 				document.getElementById('loading-status').innerHTML = pString;
 			}
+
+			function loadJui() {
+				//changeLoadingStatus('Lade Grafische Benutzeroberfläche');
+				
+				//addElementHead('scripts/output.js', 'JS', function() { loadJs(); });
+
+				loadJs();
+			}
 			
 			function loadJs() {
 				changeLoadingStatus('Lade Funktionen');
 				
-				addElementHead('scripts/general.js', 'JS', function() { loadJui(); });
+				addElementHead('scripts/general.js', 'JS', function() { loadJui2(); });
 			}
 			
 			function loadJsShared() {
 				changeLoadingStatus('Lade Funktionen');
 				
 				addElementHead('scripts/shared.js', 'JS', function() { loadSharedMain(); });
-			}
-
-			function loadJui() {
-				changeLoadingStatus('Lade Grafische Benutzeroberfläche');
-				
-				addElementHead('scripts/output.js', 'JS', function() { loadJui2(); });
 			}
 			
 			function loadJui2() {

@@ -1,9 +1,27 @@
 <?php
 session_start();
-require_once dirname(__FILE__).'/DatabaseManager.php';
-require_once dirname(__FILE__).'/LogManager.php';
-require_once dirname(__FILE__).'/ShareManager.php';
-require_once dirname(__FILE__).'/JwtManager.php';
+
+require_once dirname(dirname(__FILE__)) . '/config.php';
+
+spl_autoload_register(function ($class_name) {
+	global $conf, $loginManager, $pluginManager, $logManager;
+
+	$file = dirname(__FILE__) . '/' . $class_name . '.php';
+
+	if(strpos(strtolower($class_name), 'jui') !== FALSE) {
+		$file = dirname(__FILE__) . '/JUIManager.php';
+		
+	}
+
+	if(file_exists($file)) {
+		include_once $file;
+	}
+});
+
+//require_once dirname(__FILE__).'/DatabaseManager.php';
+//require_once dirname(__FILE__).'/LogManager.php';
+//require_once dirname(__FILE__).'/ShareManager.php';
+//require_once dirname(__FILE__).'/JwtManager.php';
 
 if (!defined('WEBSOCKET')) {
     define('WEBSOCKET', '2');
@@ -11,6 +29,12 @@ if (!defined('WEBSOCKET')) {
 
 define('AUTHTOKENS', 1);
 define('USER_PERMISSIONS', 2);
+
+function microtime_float()
+{
+    list($usec, $sec) = explode(" ", microtime());
+    return ((float)$usec + (float)$sec);
+}
 
 class LoginManager {
 	private $databaseManager;
@@ -28,7 +52,7 @@ class LoginManager {
 	
 	private $shareManager;
 	private $user = array();
-	private $revalidate = true;
+	private $revalidate = true, $updateJwt = false;
 	private $jwtManager = null;
 	private $secret = 'secret';
 	
@@ -40,7 +64,7 @@ class LoginManager {
 		$json = json_decode(DatabaseManager::$table1);
 		
 		$this->databaseManager = new DatabaseManager();
-		$this->databaseManager->openTable("users", $json);
+		$this->databaseManager->openTable('users', $json);
 		
 		if(!empty($_POST['share'])) {
 			$this->shareManager = new ShareManager($_POST['share']);
@@ -62,15 +86,15 @@ class LoginManager {
 			$decryptedKey = $this->decryptToken($_POST['authtoken']);
 			
 			if(! $this->loginUserByToken($decryptedKey)) {
-				die("test2");
+				die('test2');
 			}
 		} else if(!empty($_GET['authtoken'])) {
 			//$decryptedKey = $this->decryptToken($_POST['authtoken']);
 			
 			if(! $this->loginUserByToken($_GET['authtoken'])) {
-				die("test2");
+				die('test2');
 			}
-		} else if(!empty($_GET['action']) AND $_GET['action'] == "login" && !empty($_POST['username']) && !empty($_POST['password'])) {
+		} else if(!empty($_GET['action']) AND $_GET['action'] == 'login' && !empty($_POST['username']) && !empty($_POST['password'])) {
 			
 		} else if(constant('WEBSOCKET') == 1) {
 		} else if(empty($_SESSION['username']) || empty($_SESSION['id']) || empty($_SESSION['authtoken'])) {
@@ -79,29 +103,56 @@ class LoginManager {
 	}
 
 	function revalidate() {
-		if(!empty($_SERVER['HTTP_AUTHORIZATION'])  && $this->startsWith($_SERVER['HTTP_AUTHORIZATION'], 'bearer ')) {
-			$jwtRequest = substr($_SERVER['HTTP_AUTHORIZATION'], 7);
-			$data = $this->jwtManager->getJwtData($jwtRequest);
+		if($this->revalidate) {
+			if(!empty($_SERVER['HTTP_AUTHORIZATION'])  && $this->startsWith($_SERVER['HTTP_AUTHORIZATION'], 'bearer ')) {
+				$jwtRequest = substr($_SERVER['HTTP_AUTHORIZATION'], 7);
+				$data = $this->jwtManager->getJwtData($jwtRequest);
 
-			if(!empty($data->sub) && $this->jwtManager->validateJwt($jwtRequest, $this->secret) == 2) {
-				$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, $this->secret, array('sub'=>$data->sub), 60);
-				$jwtSignature = $this->jwtManager->getSignature($jwt);
+				if(!empty($data->sub) && $this->jwtManager->validateJwt($jwtRequest, $this->secret) == 2) {
+					$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, $this->secret, array('sub'=>$data->sub), 60);
+					$jwtSignature = $this->jwtManager->getSignature($jwt);
 
-				$this->addJwtSignature($jwtSignature, $name='Endgerät', $data->sub);
-				$this->removeJwtSignature($this->jwtManager->getSignature($jwtRequest), $data->sub);
+					$this->addJwtSignature($jwtSignature, $name='Endgerät', $data->sub);
+					$this->removeJwtSignature($this->jwtManager->getSignature($jwtRequest), $data->sub);
 
-				return $jwt;
+					return $jwt;
+				}
 			}
+		} else if($this->updateJwt) {
+			return $this->user['jwt'];
 		}
 	}
 
 	function needRevalidation() {
-		return $this->revalidate;
+		return $this->revalidate || $this->updateJwt;
 	}
 
 	function startsWith($haystack, $needle) {
 		// search backwards starting from haystack length characters from the end
-		return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
+		return $needle === '' || strrpos($haystack, $needle, -strlen($haystack)) !== false;
+	}
+
+	function setEncryptionKey($key) {
+		global $pluginManager;
+
+		if($pluginManager->getPluginName() == 'plg_user') {
+			$key = hash('sha512', $key);
+
+			if($key != $this->user['key']) {
+				$this->user['jwt'] = $this->jwtManager->setData($this->user['jwt'], array('_sek', $key), $this->secret);
+				$this->updateJwt = true;
+			}
+		}
+	}
+
+	function getLogManager() {
+		global $logManager;
+
+		if(empty($logManager)) {
+			$logManager = new LogManager();
+		}
+
+		return $logManager;
 	}
 
 	function proofJwt($jwtRequest) {
@@ -109,8 +160,9 @@ class LoginManager {
 			$data = $this->jwtManager->getJwtData($jwtRequest);
 
 			$_SESSION['id'] = $data->sub;
-			$this->user["id"] = $data->sub;
-			$this->user["username"] = $data->name;
+			$this->user['id'] = $data->sub;
+			$this->user['username'] = $data->name;
+			$this->user['jwt'] = $jwtRequest;
 
 			if(!empty($data->_sek)) {
 				$this->user['key'] = $data->_sek;
@@ -121,18 +173,19 @@ class LoginManager {
 			if( !empty($jwtInfo) && empty($jwtInfo['refused']) ) {
 				$this->revalidate = true;
 			} else {
-				header("HTTP/1.1 401 Unauthorized");
+				header('HTTP/1.1 401 Unauthorized');
 				die('{"head":{"status":401}}');
 			}
 		} else if($this->jwtManager->validateJwt($jwtRequest, $this->secret) != 1) {
-			header("HTTP/1.1 401 Unauthorized");
+			header('HTTP/1.1 401 Unauthorized');
 			die('{"head":{"status":401}}');
 		} else {
 			$data = $this->jwtManager->getJwtData($jwtRequest);
 
 			$_SESSION['id'] = $data->sub;
-			$this->user["id"] = $data->sub;
-			$this->user["username"] = $data->name;
+			$this->user['id'] = $data->sub;
+			$this->user['username'] = $data->name;
+			$this->user['jwt'] = $jwtRequest;
 
 			if(!empty($data->_sek)) {
 				$this->user['key'] = $data->_sek;
@@ -147,7 +200,7 @@ class LoginManager {
 		
 		$userList;
 		
-		for($i = 0; $i < count($pReturn); $i++) {
+		for($i = 0, $x = count($pReturn); $i < $x; $i++) {
 			$pReturn[$i]['digesta1'] = md5($pReturn[$i]['digesta1']);
 			$id = $pReturn[$i]['id'];
 			
@@ -183,8 +236,10 @@ class LoginManager {
 	        $token .= $codeAlphabet[$this->crypto_rand_secure(0, $max)];
 	    }*/
 
+		require_once dirname(__FILE__) . '/CryptManager.php';
+
 		$jwtManager = new JwtManager();
-		$token = $jwtManager->createJwt($pUsername, $pPassword, $this->secret, array('sub'=>$userid), 60);
+		$token = $jwtManager->createJwt($pUsername, hash('sha512', $pPassword), $this->secret, array('sub'=>$userid), 60);
 		
 		$this->addSecurityToken($token, $name);
 		$this->addJwtSignature($jwtManager->getSignature($token), $name, $userid);
@@ -202,8 +257,6 @@ class LoginManager {
 	} 
 	
 	function loginUserByPassword($pUsername, $pPassword, $name='Endgerät') {
-		global $logManager;
-		
 		$pUsername = trim(strtolower($pUsername));
 		$array['username'] = array('operator'=>'=', 'value'=>$pUsername);
 		$result = $this->databaseManager->getValues($array, 1);
@@ -220,14 +273,14 @@ class LoginManager {
 				$this->setSessions($pUsername, $id, $permissions['group'], $securityToken);
 				
 				if(constant('WEBSOCKET') != 1)
-					$logManager->addLog("Der Benutzer " . $result['username'] . " hat sich angemeldet. (IP: " . $_SERVER['REMOTE_ADDR'] . ")");
+					$this->getLogManager()->addLog('Der Benutzer ' . $result['username'] . ' hat sich angemeldet. (IP: ' . $_SERVER['REMOTE_ADDR'] . ')');
 				return $securityToken;
 			}
 		}
 		
 		if(constant('WEBSOCKET') != 1) {
-			$message = "Ein Benutzer hat versucht sich mit fehlerhaften Anmeldedaten (Benutzername: '" . $pUsername . "') anzumelden (IP: " . $_SERVER['REMOTE_ADDR'] . ").";
-			$logManager->addLog($message);
+			$message = 'Ein Benutzer hat versucht sich mit fehlerhaften Anmeldedaten (Benutzername: \'' . $pUsername . '\') anzumelden (IP: ' . $_SERVER['REMOTE_ADDR'] . ').';
+			$this->getLogManager()->addLog($message);
 		}
 		return null;
 	}
@@ -256,7 +309,7 @@ class LoginManager {
 		$json = json_decode($json);
 		
 		$databaseManagerSecurityToken = new DatabaseManager();
-		$databaseManagerSecurityToken->openTable("authtokens", $json);
+		$databaseManagerSecurityToken->openTable('authtokens', $json);
 		
 		$userId = $this->getId();
 		
@@ -283,12 +336,10 @@ class LoginManager {
 	}
 	
 	function loginUserByToken($pToken) {
-		global $logManager;
-		
 		$json = json_decode(DatabaseManager::$table2);
 		
 		$databaseManagerSecurityToken = new DatabaseManager();
-		$databaseManagerSecurityToken->openTable("authtokens", $json);
+		$databaseManagerSecurityToken->openTable('authtokens', $json);
 		
 		$arrayToken['authtoken'] = array('operator'=>'=', 'value'=>$pToken);
 		$resultToken = $databaseManagerSecurityToken->getValues($arrayToken, 1);
@@ -311,13 +362,11 @@ class LoginManager {
 		}
 		
 		if(constant('WEBSOCKET') != 1)
-			$logManager->addLog("Ein Benutzer versuchte sich mit einem fehlerhaften Authtoken anzumelden (IP: " . $_SERVER['REMOTE_ADDR'] . ")");
+			$this->getLogManager()->addLog('Ein Benutzer versuchte sich mit einem fehlerhaften Authtoken anzumelden (IP: ' . $_SERVER['REMOTE_ADDR'] . ')');
 		return false;
 	}
 
 	function loginUserByJwt($jwt) {
-		global $logManager;
-
 		$data = $this->jwtManager->getJwtData($jwt);
 		$validate = $this->jwtManager->validateJwt($jwt, $this->secret);
 		if($validate == 1 || $validate == 2) {
@@ -340,7 +389,7 @@ class LoginManager {
 		}
 		
 		if(constant('WEBSOCKET') != 1)
-			$logManager->addLog("Ein Benutzer versuchte sich mit einem fehlerhaften Authtoken anzumelden (IP: " . $_SERVER['REMOTE_ADDR'] . ")");
+			$this->getLogManager()->addLog('Ein Benutzer versuchte sich mit einem fehlerhaften Authtoken anzumelden (IP: ' . $_SERVER['REMOTE_ADDR'] . ')');
 		return false;
 	}
 	
@@ -348,7 +397,7 @@ class LoginManager {
 		$databasePermissions = new DatabaseManager();
 		$json = DatabaseManager::$table3;
 		$json = json_decode($json);
-		$databasePermissions->openTable("user_permissions", $json);
+		$databasePermissions->openTable('user_permissions', $json);
 		
 		$arrayToken['userid'] = array('operator'=>'=', 'value'=>$pId);
 		$resultToken1 = $databasePermissions->getValues($arrayToken, 1);
@@ -356,7 +405,7 @@ class LoginManager {
 		
 		$json = DatabaseManager::$table4;
 		$json = json_decode($json);
-		$databasePermissions->openTable("custom_user_permissions", $json);
+		$databasePermissions->openTable('custom_user_permissions', $json);
 		
 		$arrayToken2['user'] = array('operator'=>'=', 'value'=>$pId);
 		$resultTokenTemp = $databasePermissions->getValues($arrayToken2);
@@ -369,10 +418,11 @@ class LoginManager {
 			$resultToken2[$permissionName] = $permissionValue;
 		}
 		
-		$resultToken2['use_plg_serversettings'] = "1";
-		$resultToken2['use_plg_license'] = "1";
-		$resultToken2['use_plg_order'] = "1";
-		$resultToken2['use_plg_user'] = "1";
+		
+		$resultToken2['use_plg_serversettings'] = '1';
+		$resultToken2['use_plg_license'] = '1';
+		$resultToken2['use_plg_order'] = '1';
+		$resultToken2['use_plg_user'] = '1';
 		
 		if(!empty($resultToken1) && !empty($resultToken2)) {
 			return array_merge($resultToken2, $resultToken1);
@@ -386,8 +436,8 @@ class LoginManager {
 	}
 	
 	function decryptToken($pToken) {
-		$privateKey = "1234567891234567";
-		$iv = "1234567891234567";
+		$privateKey = '1234567891234567';
+		$iv = '1234567891234567';
 		
 		$authkey = $_POST['authtoken'];
 		
@@ -401,9 +451,9 @@ class LoginManager {
 		if( is_string($name) ) {
 			$databasePreferences = new DatabaseManager();
 			$json = json_decode(DatabaseManager::$table6);
-			$databasePreferences->openTable("user_preferences", $json);
+			$databasePreferences->openTable('user_preferences', $json);
 			
-			$result = $databasePreferences->getValues(Array("name"=>Array("value"=>$name, "type"=>"s", "operator"=>"=")), 1);
+			$result = $databasePreferences->getValues(Array('name'=>Array('value'=>$name, 'type'=>'s', 'operator'=>'=')), 1);
 			
 			if(!empty($result) && !empty($result['value'])) {
 				return $result['value'];
@@ -417,34 +467,34 @@ class LoginManager {
 		if( is_string($name) ) {
 			$databasePreferences = new DatabaseManager();
 			$json = json_decode(DatabaseManager::$table6);
-			$databasePreferences->openTable("user_preferences", $json);
+			$databasePreferences->openTable('user_preferences', $json);
 			
-			$result = $databasePreferences->insertOrUpdateValue(Array("value"=>Array("value"=>$value, "type"=>"s")), Array("name"=>Array("value"=>$name, "type"=>"s", "operator"=>"=")) );
+			$result = $databasePreferences->insertOrUpdateValue(Array('value'=>Array('value'=>$value, 'type'=>'s')), Array('name'=>Array('value'=>$name, 'type'=>'s', 'operator'=>'=')) );
 		}
 	}
 	
 	function addMainPlugin($pluginId) {
-		$mainPlugins = $this->getUserPreference("mainplugins", null);
+		$mainPlugins = $this->getUserPreference('mainplugins', null);
 		
 		if(!empty($mainPlugins)) {
 			$mainPlugins .= '|';
 		}
 		$mainPlugins .= $pluginId;
 		
-		if(empty($mainPlugins) || strpos($this->getUserPreference("mainplugins", null), $pluginId) === FALSE) {
-			$this->setUserPreference("mainplugins", $mainPlugins);
+		if(empty($mainPlugins) || strpos($this->getUserPreference('mainplugins', null), $pluginId) === FALSE) {
+			$this->setUserPreference('mainplugins', $mainPlugins);
 		}
 		
 		return null;
 	}
 	
 	function removeMainPlugin($pluginId) {
-		$mainPlugins = $this->getUserPreference("mainplugins", null);
+		$mainPlugins = $this->getUserPreference('mainplugins', null);
 		
 		$mainPlugins = str_replace($pluginId . '|', '', $mainPlugins);
 		$mainPlugins = str_replace('|' . $pluginId, '', $mainPlugins);
 		
-		$this->setUserPreference("mainplugins", $mainPlugins);
+		$this->setUserPreference('mainplugins', $mainPlugins);
 		return null;
 	}
 	
@@ -460,11 +510,11 @@ class LoginManager {
 			return $this->shareManager->getUsername();
 		} else if(!empty($_SESSION['username'])) {
 			return $_SESSION['username'];
-		} else if(!empty($this->user["username"])) {
-			return $this->user["username"];
+		} else if(!empty($this->user['username'])) {
+			return $this->user['username'];
 		}
 		
-		return "";
+		return '';
 	}
 	
 	function getId() {
@@ -472,12 +522,20 @@ class LoginManager {
 			return $this->shareManager->getId();
 		} else if(!empty($_SESSION['id'])) {
 			return $_SESSION['id'];
-		} else if(!empty($this->user["id"])) {
-			return $this->user["id"];
+		} else if(!empty($this->user['id'])) {
+			return $this->user['id'];
 		}
 	}
 
-	function getEncryptionKey() {
+	function getEncryptionPassword() {
+		if(!empty($this->user['key'])) {
+			return $this->user['key'];
+		}
+
+		return null;
+	}
+
+	function getPluginKey() {
 		global $pluginManager;
 
 		require_once dirname(__FILE__) . '/CryptManager.php';
@@ -501,7 +559,7 @@ class LoginManager {
 
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table12);
-		$databaseAuthtokens->openTable("keys", $json);
+		$databaseAuthtokens->openTable('keys', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
 		$arrayToken['plugin'] = array('operator'=>'=', 'value'=>$pluginName, 'type'=>'s');
@@ -512,7 +570,7 @@ class LoginManager {
 
 			$arrayToken['key'] = array('operator'=>'=', 'value'=>$asciiKey, 'type'=>'s');
 			if($databaseAuthtokens->insertValue($arrayToken)) {
-				return array("user"=>$this->getId(), "plugin"=>$pluginName, "key"=>$asciiKey);
+				return array('user'=>$this->getId(), 'plugin'=>$pluginName, 'key'=>$asciiKey);
 			}
 
 			return null;
@@ -602,7 +660,7 @@ class LoginManager {
 				$id = $result['id'];
 				$password = $this->getSaltedPassword($this->getUsername(), $pPasswordNew);
 				
-				if($this->databaseManager->setValue(Array("digesta1"=>Array("value"=>$password)), Array("id"=>Array("operator"=>"=", "value"=>$id, "type"=>"i"))))				
+				if($this->databaseManager->setValue(Array('digesta1'=>Array('value'=>$password)), Array('id'=>Array('operator'=>'=', 'value'=>$id, 'type'=>'i'))))				
 				return true;
 			}
 		}
@@ -619,7 +677,7 @@ class LoginManager {
 	public function getAuthtokens() {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table2);
-		$databaseAuthtokens->openTable("authtokens", $json);
+		$databaseAuthtokens->openTable('authtokens', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
 		$resultToken1 = $databaseAuthtokens->getValues($arrayToken);
@@ -632,13 +690,13 @@ class LoginManager {
 			return $_SESSION['authtoken'];
 		}
 		
-		return "";
+		return '';
 	}
 	
 	public function getAuthtokenInfoById($id) {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table2);
-		$databaseAuthtokens->openTable("authtokens", $json);
+		$databaseAuthtokens->openTable('authtokens', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
 		$arrayToken['id'] = array('operator'=>'=', 'value'=>$id, 'type'=>'i');
@@ -650,11 +708,11 @@ class LoginManager {
 	public function setAuthtokenName($id, $name) {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table2);
-		$databaseAuthtokens->openTable("authtokens", $json);
+		$databaseAuthtokens->openTable('authtokens', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
 		$arrayToken['id'] = array('operator'=>'=', 'value'=>$id, 'type'=>'i');
-		$resultToken1 = $databaseAuthtokens->setValue(array("name"=>$name), $arrayToken);
+		$resultToken1 = $databaseAuthtokens->setValue(array('name'=>$name), $arrayToken);
 		
 		return $resultToken1;
 	}
@@ -662,7 +720,7 @@ class LoginManager {
 	public function removeAuthtokenById($id) {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table2);
-		$databaseAuthtokens->openTable("authtokens", $json);
+		$databaseAuthtokens->openTable('authtokens', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
 		$arrayToken['id'] = array('operator'=>'=', 'value'=>$id, 'type'=>'i');
@@ -674,7 +732,7 @@ class LoginManager {
 	public function removeAuthtoken($authtoken) {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table2);
-		$databaseAuthtokens->openTable("authtokens", $json);
+		$databaseAuthtokens->openTable('authtokens', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
 		$arrayToken['authtoken'] = array('operator'=>'=', 'value'=>$authtoken, 'type'=>'s');
@@ -686,7 +744,7 @@ class LoginManager {
 	public function removeAllAuthtokens() {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table2);
-		$databaseAuthtokens->openTable("authtokens", $json);
+		$databaseAuthtokens->openTable('authtokens', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$this->getId(), 'type'=>'i');
 		$resultToken1 = $databaseAuthtokens->remove($arrayToken);
@@ -698,7 +756,7 @@ class LoginManager {
 	public function getJwtInfoBySignature($signature, $userid) {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table11);
-		$databaseAuthtokens->openTable("jwt", $json);
+		$databaseAuthtokens->openTable('jwt', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$userid, 'type'=>'i');
 		$arrayToken['signature'] = array('operator'=>'=', 'value'=>$signature, 'type'=>'s');
@@ -710,7 +768,7 @@ class LoginManager {
 	public function addJwtSignature($signature, $name='Endgerät', $userid) {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table11);
-		$databaseAuthtokens->openTable("jwt", $json);
+		$databaseAuthtokens->openTable('jwt', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$userid, 'type'=>'i');
 		$arrayToken['signature'] = array('operator'=>'=', 'value'=>$signature, 'type'=>'s');
@@ -723,7 +781,7 @@ class LoginManager {
 	public function removeJwtSignature($signature, $userid) {
 		$databaseAuthtokens = new DatabaseManager();
 		$json = json_decode(DatabaseManager::$table11);
-		$databaseAuthtokens->openTable("jwt", $json);
+		$databaseAuthtokens->openTable('jwt', $json);
 		
 		$arrayToken['user'] = array('operator'=>'=', 'value'=>$userid, 'type'=>'i');
 		$arrayToken['signature'] = array('operator'=>'=', 'value'=>$signature, 'type'=>'s');
@@ -775,7 +833,7 @@ function sync($type) {
 	
 	if(!empty($type)) {
 		if($type == USER_PERMISSIONS) {
-			$database->openTable("user_permissions", json_decode(DatabaseManager::$table3));
+			$database->openTable('user_permissions', json_decode(DatabaseManager::$table3));
 			$permissionsDb = $database->getValues();
 			
 			$permissions;
@@ -785,27 +843,27 @@ function sync($type) {
 				$user = $permission['userid'];
 				
 				if(!empty($permission['access_files'])) {
-					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::FILE_ACCESS, "value"=>$permission['access_files']);
+					$permissions[] = Array('user'=>$user, 'permission'=>LoginManager::FILE_ACCESS, 'value'=>$permission['access_files']);
 				}
 				
 				if(!empty($permission['stop_server'])) {
-					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::STOP_SERVER, "value"=>$permission['stop_server']);
+					$permissions[] = Array('user'=>$user, 'permission'=>LoginManager::STOP_SERVER, 'value'=>$permission['stop_server']);
 				}
 				
 				if(!empty($permission['log_access'])) {
-					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::LOG_ACCESS, "value"=>$permission['log_access']);
+					$permissions[] = Array('user'=>$user, 'permission'=>LoginManager::LOG_ACCESS, 'value'=>$permission['log_access']);
 				}
 				
 				if(!empty($permission['modify_users'])){
-					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::MODIFY_USERS, "value"=>$permission['modify_users']);
+					$permissions[] = Array('user'=>$user, 'permission'=>LoginManager::MODIFY_USERS, 'value'=>$permission['modify_users']);
 				}
 				
 				if(!empty($permission['server_notify'])) {
-					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::SERVER_NOTIFY, "value"=>$permission['server_notify']);
+					$permissions[] = Array('user'=>$user, 'permission'=>LoginManager::SERVER_NOTIFY, 'value'=>$permission['server_notify']);
 				}
 				
 				if(!empty($permission['start_server'])) {
-					$permissions[] = Array("user"=>$user, "permission"=>LoginManager::START_SERVER, "value"=>$permission['start_server']);
+					$permissions[] = Array('user'=>$user, 'permission'=>LoginManager::START_SERVER, 'value'=>$permission['start_server']);
 				}
 			}
 			
@@ -813,7 +871,7 @@ function sync($type) {
 			
 			syncData($json_encoded, USER_PERMISSIONS);
 		} else if($type == AUTHTOKENS) {
-			$database->openTable("authtokens", json_decode(DatabaseManager::$table2));
+			$database->openTable('authtokens', json_decode(DatabaseManager::$table2));
 			$authtokens = $database->getValues();
 			
 			$json_encoded = json_encode($authtokens);

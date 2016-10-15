@@ -12,7 +12,7 @@ class LogManager {
 			call_user_func_array(array($this,$f), $a);
 		}
 		
-		require_once dirname(__FILE__) . '/DatabaseManager.php';
+		//require_once dirname(__FILE__) . '/DatabaseManager.php';
 		
 		$this->databaseManager = new DatabaseManager();
 		$this->databaseManager->openTable('logs', json_decode(DatabaseManager::$table7) );
@@ -85,7 +85,5 @@ class LogManager {
 			return $this->databaseManager->remove(Array("timestamp"=>Array("value"=>time()-2678400, "type"=>"i", "operator"=>'<')));
 	}
 }
-
-$logManager = new LogManager();
 
 ?>

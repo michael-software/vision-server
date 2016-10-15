@@ -4,9 +4,8 @@ if (!defined('WEBSOCKET')) {
     define('WEBSOCKET', '2');
 }
 
-require_once dirname(__FILE__) . '/FileManager.php';
-require_once dirname(__FILE__) . '/JUIManager.php';
-require_once dirname(dirname(__FILE__)) . '/config.php';
+//require_once dirname(__FILE__) . '/FileManager.php';
+//require_once dirname(__FILE__) . '/JUIManager.php';
 
 class PluginManager {
 	private $plugin = null;
@@ -19,10 +18,10 @@ class PluginManager {
 	public $fileManager;
 	public $config = null;
 	private $commands = null;
-	private $ipServiceUrl = "http://www.web4brauns.de/vision/getip.php";
+	private $ipServiceUrl = 'http://www.web4brauns.de/vision/getip.php';
 	public $useWolServer = TRUE;
-	private $wolPort = "3685"; // you can choose any port. You need a server that run the WolServer (found on GitHub)
-	private $wolHost = ""; // only use the IP-Address or Hostname. No Protocol!! (e.g. allowed: 192.165.72.54, example.org, wol.example.org; forbidden: http://example.org, 45.45.48.68/, example.org/). It's set to your Ip if an IpService is set. It's important that you can access this Url from the WWW.
+	private $wolPort = '3685'; // you can choose any port. You need a server that run the WolServer (found on GitHub)
+	private $wolHost = ''; // only use the IP-Address or Hostname. No Protocol!! (e.g. allowed: 192.165.72.54, example.org, wol.example.org; forbidden: http://example.org, 45.45.48.68/, example.org/). It's set to your Ip if an IpService is set. It's important that you can access this Url from the WWW.
 	private $basedir = './';
 	private $cryptManager;
 	
@@ -44,9 +43,8 @@ class PluginManager {
 	
 	function __construct1($pPlugin) {
 		global $loginManager;
-		global $logManager;
 		
-		if(!$loginManager->isAllowed('use_' . $pPlugin) && $pPlugin != "plg_user" && constant('WEBSOCKET') != 1) {
+		if(!$loginManager->isAllowed('use_' . $pPlugin) && $pPlugin != 'plg_user' && constant('WEBSOCKET') != 1) {
 			die('[{"type":"warning","value":'.json_encode('Sie dürfen leider nicht auf dieses Plugin zugreifen. Bitte wenden sie sich an einen Administrator.') . '}]');
 		}
 		
@@ -90,39 +88,42 @@ class PluginManager {
 		
 		$this->juiManager = new JUI\Manager($pPlugin);
 		
-		$logManager->setPlugin($pPlugin);
+		$loginManager->getLogManager()->setPlugin($pPlugin);
 	}
 	
 	function getPlugins($json = TRUE) {
 		global $loginManager;
 		
 		$return = Array();
-		
-		$handle = opendir($this->basedir . '/plugins');
 		$i = 0;
 		
-		$extraSort = Array("plg_serversettings", "plg_license", "plg_order", "plg_user");
+		$extraSort = Array('plg_serversettings', 'plg_license', 'plg_order', 'plg_user');
 		
-		while ($file = readdir($handle)) {
+		$files = scandir($this->basedir . '/plugins');
+
+		for($i = 0, $x = count($files); $i < $x; $i++) {
+			$file = $files[$i];
+
 			if($file != '.' && $file != '..' && is_dir($this->basedir . '/plugins/'.$file)) {
 				if(in_array($file, $extraSort)) {
 					continue;
 				}
 				
 				if($loginManager->isAllowed('use_' . $file)) {
-					$return[$i] = $this->pluginToArray($file);
-					$i++;
+					$return[] = $this->pluginToArray($file);
 				}
 			}
 		}
-		
+
+
 		if(is_bool($json) && $json)
-		foreach($extraSort as $file) {
+		for($i = 0, $x = count($extraSort); $i < $x; $i++) {
+			$file = $extraSort[$i];
+
 			if($file != '.' && $file != '..' && is_dir($this->basedir . '/plugins/'.$file)) {
 				
 				if($loginManager->isAllowed('use_' . $file)) {
-					$return[$i] = $this->pluginToArray($file);
-					$i++;
+					$return[] = $this->pluginToArray($file);
 				}
 			}
 		}
@@ -232,7 +233,7 @@ class PluginManager {
 			}
 			
 			if(!empty($config) && !empty($config->shareable) && strtoupper($config->shareable) == 'TRUE') {
-				$return['shareable'] = "TRUE";
+				$return['shareable'] = 'TRUE';
 			}
 		}
 		
@@ -306,7 +307,7 @@ class PluginManager {
 						$default = 0;
 					}
 					
-					$output[] = array("id"=>$id, "name"=>$name, "default"=>$default);
+					$output[] = array('id'=>$id, 'name'=>$name, 'default'=>$default);
 				} else if(!empty($permission[0]) && !empty($permission[1])) {
 					$id = $pluginId . '_' . $permission[1];
 					$name = $permission[0];
@@ -317,7 +318,7 @@ class PluginManager {
 						$default = 0;
 					}
 					
-					$output[] = array("id"=>$id, "name"=>$name, "default"=>$default);
+					$output[] = array('id'=>$id, 'name'=>$name, 'default'=>$default);
 				}
 			}
 		}
@@ -335,7 +336,7 @@ class PluginManager {
 		global $logManager;
 		global $jUI;
 		global $conf;
-		
+
 		if(!empty($command) && is_string($command)) {
 			$this->setCommand($command);
 		}
@@ -386,7 +387,7 @@ class PluginManager {
 			
 			while ($file = readdir($handle)) {
 				if($file != '.' && $file != '..' && !is_dir($path.$file)) {
-					if(strtoupper(pathinfo($file, PATHINFO_EXTENSION)) == "PHP" || strtoupper(pathinfo($file, PATHINFO_EXTENSION)) == "JSON") {
+					if(strtoupper(pathinfo($file, PATHINFO_EXTENSION)) == 'PHP' || strtoupper(pathinfo($file, PATHINFO_EXTENSION)) == 'JSON') {
 						$return[] = pathinfo($file, PATHINFO_FILENAME);
 					}
 				}
@@ -425,7 +426,7 @@ class PluginManager {
 	}
 	
 	function getWidgetArray1($pPlugin) {
-		return $this->getWidgetArray2($pPlugin, "default");
+		return $this->getWidgetArray2($pPlugin, 'default');
 	}
 	
 	function getWidgetArray2($pPlugin, $pName) {
@@ -476,7 +477,7 @@ class PluginManager {
 	}
 	
 	private function getWidget1($pPlugin) {
-		$this->getWidget2($pPlugin, "default");
+		$this->getWidget2($pPlugin, 'default');
 	}
 	
 	private function getWidget2($pPlugin, $pName) {
@@ -527,12 +528,12 @@ class PluginManager {
 	}
 	
 	function getSettingsName() {
-		return "plg_serversettings";
+		return 'plg_serversettings';
 	}
 
 	function getCommand() {
 		if(!empty($_GET['cmd']) && empty($this->commands)) {
-			$this->commands = explode("/", $_GET['cmd']);
+			$this->commands = explode('/', $_GET['cmd']);
 		}
 		
 		$a = func_get_args(); 
@@ -560,7 +561,7 @@ class PluginManager {
 	}
 	
 	private function setCommand($cmd) {
-		$this->commands = explode("/", $cmd);
+		$this->commands = explode('/', $cmd);
 	}
 	
 	function getUserManager() {
@@ -578,10 +579,10 @@ class PluginManager {
 	
 	function getWolUrl() {
 		if(empty($this->wolHost)) {
-			return "http://" . $this->getUrl() . ":" . $this->wolPort . "/";
+			return 'http://' . $this->getUrl() . ':' . $this->wolPort . '/';
 		}
 		
-		return "http://" . $this->wolHost . ":" . $this->wolPort . "/";
+		return 'http://' . $this->wolHost . ':' . $this->wolPort . '/';
 	}
 	
 	function getNotificationManager() {
@@ -595,7 +596,7 @@ class PluginManager {
 	function getMainPlugins() {
 		global $loginManager;
 		
-		$mainPlugins = $loginManager->getUserPreference("mainplugins", null);
+		$mainPlugins = $loginManager->getUserPreference('mainplugins', null);
 		
 		if(!empty($mainPlugins)) {
 			return json_encode($mainPlugins);
@@ -610,7 +611,7 @@ class PluginManager {
 		$id = str_replace(' ', '', $id);
 		$id = str_replace("\r", '', $id);
 		$id = str_replace("\n", '', $id);
-		$mainPlugins = $loginManager->getUserPreference("mainplugins", null);
+		$mainPlugins = $loginManager->getUserPreference('mainplugins', null);
 		
 		if(!empty($mainPlugins) && is_string($mainPlugins)) {
 			return (strpos($mainPlugins, $id) !== FALSE);
@@ -622,11 +623,11 @@ class PluginManager {
 	function getMainPluginsArray() {
 		global $loginManager;
 		
-		$mainPlugins = $loginManager->getUserPreference("mainplugins", null);
+		$mainPlugins = $loginManager->getUserPreference('mainplugins', null);
 		
 		if(!empty($mainPlugins)) {
 			$returnArray = null;
-			$mainPlugins = explode("|", $mainPlugins);
+			$mainPlugins = explode('|', $mainPlugins);
 			
 			if(!empty($mainPlugins) && is_array($mainPlugins))
 			foreach($mainPlugins as $mainPlugin) {
@@ -677,7 +678,7 @@ class PluginManager {
 		}
 	}
 	
-	function getDataType($name="data") {
+	function getDataType($name='data') {
 		if(!empty($_FILES[$name])) {
 			return PluginManager::TYPE_FILE;
 		} else if(!empty($_POST[$name])) {
@@ -691,25 +692,25 @@ class PluginManager {
 		global $loginManager;
 		
 		$databaseManager = new DatabaseManager();
-		$databaseManager->openTable("plugin_storage", DatabaseManager::$table10);
+		$databaseManager->openTable('plugin_storage', DatabaseManager::$table10);
 		
 		$pluginId = $this->getPluginName();
 		
-		$insert = array( "name"=>array("value"=>$name), "value"=>array("value"=>$value), "plugin"=>array("value"=>$pluginId) );
-		$where = array( "name"=>array("value"=>$name), "plugin"=>array("value"=>$pluginId) );
+		$insert = array( 'name'=>array('value'=>$name), 'value'=>array('value'=>$value), 'plugin'=>array('value'=>$pluginId) );
+		$where = array( 'name'=>array('value'=>$name), 'plugin'=>array('value'=>$pluginId) );
 		
 		$databaseManager->insertOrUpdateValue($insert, $where);
 	}
 	
-	function getPluginStorage($name, $default="") {
+	function getPluginStorage($name, $default='') {
 		global $loginManager;
 		
 		$databaseManager = new DatabaseManager();
-		$databaseManager->openTable("plugin_storage", DatabaseManager::$table10);
+		$databaseManager->openTable('plugin_storage', DatabaseManager::$table10);
 		
 		$pluginId = $this->getPluginName();
 		
-		$where = array( "name"=>array("value"=>$name), "plugin"=>array("value"=>$pluginId) );
+		$where = array( 'name'=>array('value'=>$name), 'plugin'=>array('value'=>$pluginId) );
 		$result = $databaseManager->getValues($where, 1);
 		
 		if(!empty($result) && !empty($result['value'])) {
@@ -723,11 +724,11 @@ class PluginManager {
 		global $loginManager;
 		
 		$databaseManager = new DatabaseManager();
-		$databaseManager->openTable("plugin_storage", DatabaseManager::$table10);
+		$databaseManager->openTable('plugin_storage', DatabaseManager::$table10);
 		
 		$pluginId = $this->getPluginName();
 		
-		$where = array( "name"=>array("value"=>$name), "plugin"=>array("value"=>$pluginId) );
+		$where = array( 'name'=>array('value'=>$name), 'plugin'=>array('value'=>$pluginId) );
 		
 		$result = $databaseManager->remove($where);
 	}
@@ -736,42 +737,42 @@ class PluginManager {
 		global $loginManager;
 		
 		$databaseManager = new DatabaseManager();
-		$databaseManager->openTable("plugin_settings", DatabaseManager::$table8);
+		$databaseManager->openTable('plugin_settings', DatabaseManager::$table8);
 		
 		$pluginId = $this->getPluginName();
 		$authtoken = $loginManager->getAuthtoken();
 		
-		$insert = array( "name"=>array("value"=>$name), "value"=>array("value"=>$value), "plugin"=>array("value"=>$pluginId) );
+		$insert = array( 'name'=>array('value'=>$name), 'value'=>array('value'=>$value), 'plugin'=>array('value'=>$pluginId) );
 		if($timestamp) {
-			$insert["timestamp"] = array("value"=>time());
+			$insert['timestamp'] = array('value'=>time());
 		} else {
-			$insert["timestamp"] = array("value"=>"");
+			$insert['timestamp'] = array('value'=>'');
 		}
 		
 		if($device) {
-			$insert["authtoken"] = array("value"=>$authtoken);
+			$insert['authtoken'] = array('value'=>$authtoken);
 		}
 		
-		$where = array( "name"=>array("value"=>$name), "plugin"=>array("value"=>$pluginId) );
+		$where = array( 'name'=>array('value'=>$name), 'plugin'=>array('value'=>$pluginId) );
 		if($device) {
-			$where["authtoken"] = array("value"=>$authtoken);
+			$where['authtoken'] = array('value'=>$authtoken);
 		}
 		
 		$databaseManager->insertOrUpdateValue($insert, $where);
 	}
 	
-	function getSimpleStorage($name, $default="", $device=TRUE, $timestamp=FALSE) {
+	function getSimpleStorage($name, $default='', $device=TRUE, $timestamp=FALSE) {
 		global $loginManager;
 		
 		$databaseManager = new DatabaseManager();
-		$databaseManager->openTable("plugin_settings", DatabaseManager::$table8);
+		$databaseManager->openTable('plugin_settings', DatabaseManager::$table8);
 		
 		$pluginId = $this->getPluginName();
 		$authtoken = $loginManager->getAuthtoken();
 		
-		$where = array( "name"=>array("value"=>$name), "plugin"=>array("value"=>$pluginId) );
+		$where = array( 'name'=>array('value'=>$name), 'plugin'=>array('value'=>$pluginId) );
 		if($device) {
-			$where["authtoken"] = array("value"=>$authtoken);
+			$where['authtoken'] = array('value'=>$authtoken);
 		}
 		
 		$result = $databaseManager->getValues($where, 1);
@@ -787,24 +788,24 @@ class PluginManager {
 		global $loginManager;
 		
 		$databaseManager = new DatabaseManager();
-		$databaseManager->openTable("plugin_settings", DatabaseManager::$table8);
+		$databaseManager->openTable('plugin_settings', DatabaseManager::$table8);
 		
 		$pluginId = $this->getPluginName();
 		$authtoken = $loginManager->getAuthtoken();
 		
-		$where = array( "name"=>array("value"=>$name), "plugin"=>array("value"=>$pluginId) );
+		$where = array( 'name'=>array('value'=>$name), 'plugin'=>array('value'=>$pluginId) );
 		if($device) {
-			$where["authtoken"] = array("value"=>$authtoken);
+			$where['authtoken'] = array('value'=>$authtoken);
 		}
 		
 		$result = $databaseManager->remove($where);
 	}
 	
-	function setTemporary($name, $value="", $device=TRUE) {
+	function setTemporary($name, $value='', $device=TRUE) {
 		return $this->setSimpleStorage($name, $value, $device, TRUE);
 	}
 	
-	function getTemporary($name, $default="", $device=TRUE) {
+	function getTemporary($name, $default='', $device=TRUE) {
 		return $this->getSimpleStorage($name, $default, $device, TRUE);
 	}
 	
@@ -855,7 +856,7 @@ class PluginManager {
 				}
 			}
 			
-			echo date("H:i:s") . ' >> ' . "\033[0;31mTRIGGERED MINUTELY\033[0m" . PHP_EOL;
+			echo date('H:i:s') . ' >> ' . '\033[0;31mTRIGGERED MINUTELY\033[0m' . PHP_EOL;
 		}
 	}
 	

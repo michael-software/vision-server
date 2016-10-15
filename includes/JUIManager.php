@@ -19,6 +19,7 @@ namespace JUI {
 		private $head;
 		private $flyover = FALSE;
 		private $warning = null;
+		private $develop = TRUE;
 
 		function __construct() {
 			$a = func_get_args();
@@ -51,10 +52,9 @@ namespace JUI {
 			$this->changed = true;
 
 			if($view instanceof View) {
-				if($view->getArray() != null)
-					$this->elements[] = $view->getArray();
+				$this->elements[] = $view;
 			} else if(is_string($view)) {
-				$this->elements[] = array("type"=>"text", "value"=>$view);
+				$this->elements[] = new JUI\Text($view);
 			}
 		}
 
@@ -67,7 +67,7 @@ namespace JUI {
 			global $loginManager;
 
 			if($this->flyover) {
-				$this->elements = Array("type"=>"flyover", "value"=>$this->getArray());
+				$this->elements = Array('type'=>'flyover', 'value'=>$this->getArray());
 				return json_encode($this->elements);
 			}
 
@@ -80,15 +80,34 @@ namespace JUI {
 				$this->head['jwt'] = $loginManager->revalidate();
 			}
 
-			return json_encode(Array("data"=>$this->getArray(), "head"=>$this->head));
+			return json_encode(Array('data'=>$this->getArray(), 'head'=>$this->head));
 		}
 
 		function getArray() {
 			if(!empty($this->warning)) {
-				return array_merge($this->elements, array(array("type"=>"warning", "value"=>$this->warning)));
+				return array_merge($this->getElements(), array(array('type'=>'warning', 'value'=>$this->warning)));
 			}
 
-			return $this->elements;
+			return $this->getElements();
+		}
+
+		function getElements() {
+			$array = array();
+
+			for($i = 0, $x = count($this->elements); $i < $x; $i++) {
+				$view = $this->elements[$i];
+
+				if($view instanceof \JUI\View) {
+					$vArray = $view->getArray();
+
+					if(!empty($vArray))
+						$array[] = $vArray;
+				} else {
+					$array[] = $view;
+				}
+			}
+
+			return $array;
 		}
 
 		/**
@@ -104,7 +123,7 @@ namespace JUI {
 					$this->newline();
 				}
 			} else {
-				$this->elements[] = Array("type"=>"nl");
+				$this->elements[] = Array('type'=>'nl');
 			}
 		}
 
@@ -113,7 +132,7 @@ namespace JUI {
 		}
 
 		function horizontalline() {
-			$this->elements[] = Array("type"=>"hline");
+			$this->elements[] = Array('type'=>'hline');
 		}
 
 		function setFlyover($enabled = TRUE) {
@@ -132,25 +151,19 @@ namespace JUI {
 			if($click instanceof Click) {
 				$action = $click->getClickString();
 
-				if($swipe == Manager::SWIPE_TOP) {
+				if($swipe === Manager::SWIPE_TOP) {
 					$this->head['swipetop'] = $action;
-				}
-
-				if($swipe == Manager::SWIPE_LEFT) {
+				} else if($swipe === Manager::SWIPE_LEFT) {
 					$this->head['swipeleft'] = $action;
-				}
-
-				if($swipe == Manager::SWIPE_RIGHT) {
+				} else if($swipe === Manager::SWIPE_RIGHT) {
 					$this->head['swiperight'] = $action;
-				}
-
-				if($swipe == Manager::SWIPE_BOTTOM) {
+				} else if($swipe === Manager::SWIPE_BOTTOM) {
 					$this->head['swipebottom'] = $action;
 				}
 			}
 		}
 
-		function setShare($view, $parameter="") {
+		function setShare($view, $parameter='') {
 			$this->head['share']['name'] = $this->plugin;
 			$this->head['share']['view'] = $view;
 			$this->head['share']['command'] = $parameter;
@@ -210,6 +223,7 @@ namespace JUI {
 		public $element;
 
 		function getArray() {
+
 			return $this->element;
 		}
 
@@ -223,7 +237,7 @@ namespace JUI {
 					$this->element['value'] = '';
 				}
 			} else if(is_object($value)) {
-				$this->element['value'] = "[OBJECT]";
+				$this->element['value'] = '[OBJECT]';
 			} else if(!is_array($value)) {
 				$this->element['value'] = $value;
 			}
@@ -246,9 +260,9 @@ namespace JUI {
 		}
 
 		function setVisible($visibility = View::VISIBLE) {
-			if($visibility == View::INVISIBLE) {
+			if($visibility === View::INVISIBLE) {
 				$this->element['visible'] = 'hidden';
-			} else if($visibility == View::GONE) {
+			} else if($visibility === View::GONE) {
 				$this->element['visible'] = 'away';
 			} else {
 				$this->element['visible'] = null;
@@ -401,12 +415,12 @@ namespace JUI {
 
 	class Click {
 		private $string = '';
-		const openPlugin = "openPlugin";
-		const openMedia = "openMedia";
-		const openUrl = "openUrl";
-		const toggleView = "toggleView";
-		const addViews = "addViews";
-		const submit = "submit";
+		const openPlugin = 'openPlugin';
+		const openMedia = 'openMedia';
+		const openUrl = 'openUrl';
+		const toggleView = 'toggleView';
+		const addViews = 'addViews';
+		const submit = 'submit';
 
 		function __construct() {
 			$a = func_get_args();
@@ -418,23 +432,23 @@ namespace JUI {
 		}
 
 		private function __construct1($pAction) {
-			if($pAction == Click::submit) {
-				return $pAction . "()";
+			if($pAction === Click::submit) {
+				return $pAction . '()';
 			}
 		}
 
 		private function __construct2($pAction, $pName) {
-			if($pAction == Click::openUrl) {
-				return $pAction . "('" . $pName . "')";
-			} else if($pAction == Click::toggleView) {
-				return $pAction . "('" . $pName . "')";
-			} else if($pAction == Click::addViews) {
+			if($pAction === Click::openUrl) {
+				return $pAction . '(\'' . $pName . '\')';
+			} else if($pAction === Click::toggleView) {
+				return $pAction . '(\'' . $pName . '\')';
+			} else if($pAction === Click::addViews) {
 				if($pName instanceof View) {
 					$viewArray[] = $pName->getArray();
 					$json = json_encode($viewArray);
 					$json = str_replace ('\'', '\\\'' , $json);
 
-					return $pAction . "('" . $json . "')";
+					return $pAction . '(\'' . $json . '\')';
 				}
 			}
 
@@ -442,9 +456,9 @@ namespace JUI {
 		}
 
 		private function __construct3($pAction, $pName, $pView) {
-			if($pAction == Click::openMedia) {
+			if($pAction === Click::openMedia) {
 				$pView = urlencode($pView);
-				return $pAction . "('" . $pName . "', '" . $pView . "')";
+				return $pAction . '(\'' . $pName . '\', \'' . $pView . '\')';
 			}
 
 			return $this->__construct4($pAction, $pName, $pView, '');
@@ -456,18 +470,18 @@ namespace JUI {
 					$pName = $pName->getPluginName();
 				}
 
-				return $pAction . "('" . $pName . "', '" . $pView . "', '" . $pParameter . "')";
+				return $pAction . '(\'' . $pName . '\', \'' . $pView . '\', \'' . $pParameter . '\')';
 			}
 
 			return '';
 		}
 
 		private function isAllowedAction($pAction) {
-			if($pAction == Click::openPlugin) {
+			if($pAction === Click::openPlugin) {
 				return true;
-			} else if($pAction == Click::openMedia) {
+			} else if($pAction === Click::openMedia) {
 				return true;
-			} else if($pAction == Click::openUrl) {
+			} else if($pAction === Click::openUrl) {
 				return true;
 			}
 
@@ -644,13 +658,13 @@ namespace JUI {
 		}
 
 		function setPreset($preset = Input::NORMAL) {
-			if($preset == Input::MULTILINE) {
+			if($preset === Input::MULTILINE) {
 				$this->element['preset'] = 'textarea';
-			} else if($preset == Input::PASSWORD) {
+			} else if($preset === Input::PASSWORD) {
 				$this->element['preset'] = 'password';
-			} else if($preset == Input::DATE) {
+			} else if($preset === Input::DATE) {
 				$this->element['preset'] = 'date';
-			}  else if($preset == Input::NUMBERS) {
+			}  else if($preset === Input::NUMBERS) {
 				$this->element['preset'] = 'number';
 			} else {
 				$this->element['preset'] = null;
@@ -666,7 +680,7 @@ namespace JUI {
 		}
 
 		function setAccepted($accept = Input::NUMBERS) {
-			if($accept == Input::NUMBERS) {
+			if($accept === Input::NUMBERS) {
 				$this->element['preset'] = 'number';
 			} else {
 				$this->element['preset'] = '';
@@ -792,7 +806,7 @@ namespace JUI {
 		function setText($text) {
 			$allowed = array('&#039;');
 			$replace = array('\'');
-			$this->element['value'] = str_replace($allowed, $replace, htmlspecialchars($text, ENT_QUOTES, "UTF-8"));
+			$this->element['value'] = str_replace($allowed, $replace, htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
 		}
 
 		function setAlignment($alignment) {
@@ -800,21 +814,21 @@ namespace JUI {
 		}
 
 		function setAlign($alignment) {
-			if($alignment == Text::LEFT) {
+			if($alignment === Text::LEFT) {
 				$this->element['align'] = 'LEFT';
-			} else if($alignment == Text::CENTER) {
+			} else if($alignment === Text::CENTER) {
 				$this->element['align'] = 'CENTER';
-			} else if($alignment == Text::RIGHT) {
+			} else if($alignment === Text::RIGHT) {
 				$this->element['align'] = 'RIGHT';
 			}
 		}
 
 		function setAppearance($appearance) {
-			if($appearance == Text::BOLD) {
+			if($appearance === Text::BOLD) {
 				$this->element['appearance'] = 'bold';
-			} else if($appearance == Text::ITALIC) {
+			} else if($appearance === Text::ITALIC) {
 				$this->element['appearance'] = 'italic';
-			} else if($appearance == Text::BOLDITALIC) {
+			} else if($appearance === Text::BOLDITALIC) {
 				$this->element['appearance'] = 'bolditalic';
 			}
 		}
@@ -917,7 +931,7 @@ namespace JUI {
 					$this->newline();
 				}
 			} else {
-				$this->element['value'][] = Array("type"=>"nl");
+				$this->element['value'][] = Array('type'=>'nl');
 			}
 		}
 	}
@@ -952,7 +966,7 @@ namespace JUI {
 		}
 
 		function setDefault($default) {
-			if($default == Spoiler::SHOW) {
+			if($default === Spoiler::SHOW) {
 				$this->element['default'] = 'SHOW';
 			} else {
 				unset($this->element['default']);
