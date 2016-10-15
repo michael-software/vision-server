@@ -58,7 +58,7 @@ class JwtManager {
 		$payload['name'] = $pUsername;
 
         if(!empty($_sek))
-		    $payload['_sek'] = urlencode( mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $this->privateKey, $_sek, MCRYPT_MODE_CBC, $this->iv) );
+		    $payload['_sek'] = $_sek;
 
         $payload['jti'] = uniqid();
 
@@ -78,10 +78,6 @@ class JwtManager {
 
         $jwt = explode('.', $jwt);
         $json = json_decode( $this->base64url_decode($jwt[1]) );
-
-        if(!empty($json->_sek)) {
-            $json->_sek = mcrypt_decrypt( MCRYPT_RIJNDAEL_128, $this->privateKey, urldecode( $json->_sek ), MCRYPT_MODE_CBC, $this->iv);
-        }
 
         return $json;
     }
@@ -104,8 +100,6 @@ class JwtManager {
         }
 
         $array = array_merge((array) $data, $array);
-
-        $array['_sek'] = urlencode( mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $this->privateKey, $array['_sek'], MCRYPT_MODE_CBC, $this->iv) );
 
         $payload = $this->jwtEncode( $array );
         $header = $this->jwtEncode( $this->getHeader() );
