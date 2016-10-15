@@ -1,5 +1,4 @@
 <?php
-require_once dirname(dirname(__FILE__)) . '/config.php';
 
 	class DatabaseManager
 	{
@@ -28,7 +27,7 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 		function __construct() 
 		{
 			global $conf;
-			
+
 			$this->db = new mysqli($conf['db_host'], $conf['db_username'], $conf['db_password'], $conf['db_database']);
 			
 			if(!empty($this->praefix)) {
@@ -620,169 +619,10 @@ require_once dirname(dirname(__FILE__)) . '/config.php';
 			return $pString;
 		}
 	}
-
 /*
-		function install() {
-			$query1 = "CREATE TABLE IF NOT EXISTS `users`(
-					`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-					`username` VARCHAR(100) NOT NULL,
-					`digesta1` TEXT NOT NULL,
-					`level` INT NOT NULL DEFAULT '0',
-					UNIQUE (`username`));";
-					
-			$query2 = "INSERT IGNORE INTO `users` (
-					`username`,`digesta1`,`level`)
-					VALUES ('admin','87fd274b7b6c01e48d7c2f965da8ddf7','10');";
-					
-			$query3 = "CREATE TABLE IF NOT EXISTS principals (
-					id INTEGER UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-					uri VARBINARY(200) NOT NULL,
-					email VARBINARY(80),
-					displayname VARCHAR(80),
-					UNIQUE(uri));";
-					
-			$query4 = "CREATE TABLE IF NOT EXISTS groupmembers (
-					id INTEGER UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-					principal_id INTEGER UNSIGNED NOT NULL,
-					member_id INTEGER UNSIGNED NOT NULL,
-					UNIQUE(principal_id, member_id));";
-					
-			$query5 = "INSERT INTO principals (uri,email,displayname) VALUES
-					('principals/admin', 'admin@example.org','Administrator'),
-					('principals/admin/calendar-proxy-read', null, null),
-					('principals/admin/calendar-proxy-write', null, null);";
-					
-			$query6 = "CREATE TABLE IF NOT EXISTS addressbooks (
-					id INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-					principaluri VARBINARY(255),
-					displayname VARCHAR(255),
-					uri VARBINARY(200),
-					description TEXT,
-					synctoken INT(11) UNSIGNED NOT NULL DEFAULT '1',
-					UNIQUE(principaluri(100), uri(100))
-					) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-
-			$query7 = "CREATE TABLE IF NOT EXISTS cards (
-					id INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-					addressbookid INT(11) UNSIGNED NOT NULL,
-					carddata MEDIUMBLOB,
-					uri VARBINARY(200),
-					lastmodified INT(11) UNSIGNED,
-					etag VARBINARY(32),
-					size INT(11) UNSIGNED NOT NULL
-					) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-					
-			$query8 = "CREATE TABLE addressbookchanges (
-					id INT(11) UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-					uri VARBINARY(200) NOT NULL,
-					synctoken INT(11) UNSIGNED NOT NULL,
-					addressbookid INT(11) UNSIGNED NOT NULL,
-					operation TINYINT(1) NOT NULL,
-					INDEX addressbookid_synctoken (addressbookid, synctoken)
-					) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
-			
-			$this->db->query($query1);
-			$this->db->query($query2);
-			$this->db->query($query3);
-			$this->db->query($query4);
-			$this->db->query($query5);
-			$this->db->query($query6);
-			$this->db->query($query7);
-			$this->db->query($query8);
-		}
-		
-		function insert($pNamesValues) {
-			$query[0] = Array();
-			$query[1] = Array();
-			$query[2] = Array();
-			$query[3] = Array();
-			
-			$i = 0;
-			
-			if($this->dbnames === NULL) {
-				return true;
-			}
-			
-			foreach($pNamesValues as $pNameValue) {
-				foreach($this->dbnames as $dbname) {
-					if($dbname[0] == $pNameValue[0]) {
-						$query[0][$i] = $pNameValue[0];
-						$query[1][$i] = &$pNameValue[1];
-						
-						if(strtoupper($dbname[1]) == strtoupper('int')) {
-							$query[2][$i] = 'i';
-						}
-						else if(strtoupper($dbname[1]) == strtoupper('varchar')) {
-							$query[2][$i] = 's';
-						}
-						
-						$query[3][$i] = '?';
-						
-						$i++; 
-					}
-				}
-			}
-			
-			$length = count($query[0]);
-			
-			$query[0][$length] = 'user';
-			$query[1][$length] = '1';
-			$query[2][$length] = 'i';
-			$query[3][$length] = '?';
-
-			array_unshift($query[1], implode('', $query[2]));
-			
-			$sql = 'INSERT INTO ' . $this->table . ' (' . implode(",", $query[0]) . ') VALUES (' . implode(",", $query[3]) . ')';
-			$stmt = $this->db->prepare($sql);
-			
-			call_user_func_array(array($stmt, "bind_param"), $this->refValues($query[1])); 
-			mysqli_stmt_execute($stmt);
-		}
-		
-		function getLogin($pUsername) {
-			$query = 'SELECT * FROM users WHERE UPPER(username)=UPPER(?)';
-			
-			if ($stmt = $this->db->prepare($query)) {
-				$stmt->bind_param("s", $pUsername);
-				$stmt->execute();
-				$result = $stmt->get_result();
-				
-				$return = $result->fetch_array(MYSQLI_ASSOC);
-				
-				$stmt->close();
-				
-				return $return;
-			}
-			
-			return null;
-		}
-
-		function getValues1($pString) {
-			$pString = str_replace(Array('WHERE', 'where'), '', $pString);
-			
-			$sql = 'SELECT * FROM ' . $this->table . ' WHERE user=1 AND' . $pString;
-			
-			$result = $this->db->query($sql);
-			
-			$return = Array();
-			$i = 0;
-			
-			while($row = $result->fetch_assoc()) {
-				foreach ($this->dbnames as $dbname) {
-					$return[$i] = $row;
-					unset($return[$i]['user']);
-				}
-				
-				$i++;
-			}
-			
-			return $return;
-		}
-		
 		function close() {
 			$this->db->close();
 			unset($this->db);
 		}
-	}
 */
 ?>
