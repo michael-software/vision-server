@@ -6,6 +6,7 @@ body {
 div, p, h1, h2, h3, h4, h5, h6, td, a {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 1em;
+	box-sizing: border-box;
 }
 
 h2 {
@@ -243,7 +244,7 @@ input[type=button]:hover {
 }
 
 /* Part of the JSONGUI */
-ul {
+ul.jui__list {
 	list-style-type: none;
 	padding-left: 0;
 	
@@ -254,21 +255,17 @@ ul {
 	-webkit-touch-callout: none; /* iOS Safari */
 }
 
-ul li {
+ul.jui__list li {
 	padding: 5px;
 	border-bottom: 1px solid #BBBBBB;
 }
 
-ul li:hover {
+ul.jui__list li:hover {
 	background-color: #AAAAAA;
 }
 
-ul li:last-child {
+ul.jui__list li:last-child {
 	border: 0;
-}
-
-ul#menu li {
-	border-bottom: none;
 }
 
 /* UPLOAD */
