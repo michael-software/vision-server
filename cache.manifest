@@ -1,0 +1,18 @@
+CACHE MANIFEST
+# 2016-10-08:v1 (YYYY-MM-DD)
+
+CACHE:
+styles/minified.php
+scripts/output.js
+scripts/general.js
+scripts/shared.js
+scripts/juiV2Custom.js
+#scripts/jquery-2.1.4.min.js
+offline.html
+
+NETWORK:
+index.html
+*
+
+FALLBACK:
+offline.html
