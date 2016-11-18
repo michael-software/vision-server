@@ -1,45 +1,37 @@
 <?php
-	if(!empty($_POST['upperfolder']) || !empty($_POST['folder'])) {
-		if($pluginManager->fileManager->isFolder($_POST['upperfolder'])) {
-			if(!empty($_POST['folder'])) {
-				if( $pluginManager->fileManager->createFolder($_POST['folder'], $_POST['upperfolder']) ) {
-					die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", "' . $_POST['upperfolder'] . $_POST['folder'] . '"]}');
-				}
-				
-				die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", "' . $_POST['upperfolder'] . '"]}');
-			} else {
-				die('{"redirect":["' . $pluginManager->getPluginName() . '", "createfolder", "' . $_POST['upperfolder'] . '"]}');
-			}
-		}
-		
-		die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", ""]}');
+	if(!empty($pluginManager->getCommand(0))) {
+		$upperfolder = $pluginManager->getCommand(0);
+	} else {
+		$upperfolder = '';
 	}
-?>
 
-[
-	{
-		"type":"heading",
-		"value":"Ordner erstellen"
-	},
-	{
-		"type":"input",
-		"label":"Ordnername: ",
-		"name":"folder"
-	},
-	{
-		"type":"input",
-		"value":"%!#|params|#!%",
-		"visible":"away",
-		"name":"upperfolder"
-	},
-	{ "type":"nl" }, { "type":"nl" },
-	{
-		"type":"submit",
-		"value":"Ordner erstellen"
-	},
-	{
-		"type":"button",
-		"value":"Zurück",
-		"click":"openPlugin('<?php echo $pluginManager->getPluginName(); ?>','home','%!#|params|#!%')"
+	if($pluginManager->fileManager->isFolder($upperfolder)) {
+		if(!empty($_POST['folder'])) {
+			if( $pluginManager->fileManager->createFolder($_POST['folder'], $upperfolder) ) {
+				$pluginManager->redirect( $pluginManager, 'home', $upperfolder . $_POST['folder'] );
+			}
+			
+			$pluginManager->redirect( $pluginManager, 'home', $upperfolder );
+		}
+	} else {
+		$pluginManager->redirect( $pluginManager, 'home' );
 	}
-]
+
+
+	$jUI->add(new JUI\Heading('Ordner erstellen'));
+
+
+	$input = new JUI\Input('folder');
+	$input->setLabel('Ordnername:');
+	$jUI->add($input);
+
+	$jUI->nline(2);
+
+	$jUI->add(new JUI\Button('Ordner erstellen', true));
+
+	$back = new JUI\Button('Zurück');
+	$back->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'home', $upperfolder) );
+	$jUI->add($back);
+
+
+?>

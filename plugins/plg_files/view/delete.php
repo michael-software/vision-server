@@ -21,9 +21,11 @@ if(!empty($command)) {
 	}
 	
 	$folder = $pluginManager->fileManager->getFolderFromPath($folder);
-	die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", "' . $folder . '"]}');
+	$pluginManager->redirect($pluginManager, 'home', $folder);
+	//die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", "' . $folder . '"]}');
 }
 
-die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", ""]}');
+$pluginManager->redirect($pluginManager, 'home', '');
+//die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", ""]}');
 
 ?>

@@ -1,36 +1,34 @@
-[
-	{
-		"type":"heading",
-		"value":"Datei"
-	},
-	{
-		"type":"headingSmall",
-		"value":"Speicherort:"
-	},
-	{
-		"type":"text",
-		"value":"%!#|params|#!%"
-	},
-	{
-		"type":"input",
-		"value":"%!#|params|#!%",
-		"visible":"away",
-		"name":"file"
-	},
-	{ "type":"nl" }, { "type":"nl" },
-	{
-		"type":"button",
-		"value":"Herunterladen",
-		"click":"openMedia('file','%!#|params|#!%')"
-	},
-	{
-		"type":"button",
-		"value":"Datei löschen",
-		"click":"openPlugin('<?php echo $pluginManager->getPluginName(); ?>','delete','%!#|params|#!%')"
-	},{"type":"nl"},{"type":"nl"},
-	{
-		"type":"button",
-		"value":"Zurück",
-		"click":"openPlugin('<?php echo $pluginManager->getPluginName(); ?>','home','%!#|params|#!%')"
-	}
-]
+<?php
+
+$file = '';
+if(!empty($pluginManager->getCommand())) {
+	$file = trim( implode('/', $pluginManager->getCommand()), '/');
+}
+
+$jUI->add(new JUI\Heading('Datei'));
+
+$jUI->add(new JUI\Heading('Speicherort:', true));
+$jUI->add($file);
+
+$jUI->nline(2);
+
+
+$delete = new JUI\Button('Datei löschen');
+$delete->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'delete', $file ) );
+$delete->setMarginTop(10);
+$delete->setMarginBottom(20);
+$jUI->add($delete);
+
+$jUI->nline();
+
+$download = new JUI\Button('Herunterladen');
+$download->setClick( new JUI\Click( JUI\Click::openMedia, 'file', $file ) );
+$jUI->add($download);
+
+$jUI->nline(2);
+
+$back = new JUI\Button('Zurück');
+$back->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'home', dirname($file) ) );
+$jUI->add($back);
+
+?>
