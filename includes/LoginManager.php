@@ -75,25 +75,9 @@ class LoginManager {
 
 			$this->proofJwt($jwtRequest);
 		} else if(!empty($_GET['jwt'])) {
-			$this->proofJwt($_GET['jwt']);
+			$this->proofJwt(urldecode($_GET['jwt']));
 		} else if(!empty($_SESSION['username']) AND !empty($_SESSION['id']) AND !empty($_SESSION['authtoken'])) {
 			$this->shareManager = new ShareManager($_SESSION['id']);
-		} else if(!empty($_POST['token'])) {
-			if(! $this->loginUserByToken($_POST['token'])) {
-				die('{"status":"needlogin"}');
-			}
-		} else if(!empty($_POST['authtoken'])) {
-			$decryptedKey = $this->decryptToken($_POST['authtoken']);
-			
-			if(! $this->loginUserByToken($decryptedKey)) {
-				die('test2');
-			}
-		} else if(!empty($_GET['authtoken'])) {
-			//$decryptedKey = $this->decryptToken($_POST['authtoken']);
-			
-			if(! $this->loginUserByToken($_GET['authtoken'])) {
-				die('test2');
-			}
 		} else if(!empty($_GET['action']) AND $_GET['action'] == 'login' && !empty($_POST['username']) && !empty($_POST['password'])) {
 			
 		} else if(constant('WEBSOCKET') == 1) {
