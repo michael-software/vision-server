@@ -108,10 +108,12 @@ class FileManager {
 		if(!empty($extension)) {
 			if($extension == "MP3") {
 				return "music";
-			} else if($extension == "MP4") {
+			} else if($extension == "MP4" || $extension == "WEBM") {
 				return "video";
 			} else if($extension == "JPEG" || $extension == "JPG" || $extension == "PNG" || $extension == "GIF") {
 				return "image";
+			} else if($extension == "TXT") {
+				return "text";
 			} else if($extension == "TMPDL") {
 				return "tmpdl";
 			}
