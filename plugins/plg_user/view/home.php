@@ -22,6 +22,10 @@
 		$loginManager->setUserPreference("bgcolor", $_POST['bgcolor']);
 	}
 
+	if(!empty($_POST['encryptionKey'])) {
+		$loginManager->setEncryptionKey($_POST['encryptionKey']);
+	}
+
 	$heading = new JUI\Heading($loginManager->getUsername());
 	$jUI->add($heading);
 	
@@ -97,6 +101,27 @@
 		$colorContainer->add($reset);
 
 	$jUI->add($colorContainer);
+
+
+
+	$encryptionContainer = new JUI\Container();
+	$encryptionContainer->setBackgroundColor('#E8E8E8');
+	$encryptionContainer->setPadding(20);
+	$encryptionContainer->setMarginTop(15);
+	$encryptionContainer->setMarginBottom(15);
+	
+		$encryptionContainer->add( new JUI\Heading("Entschlüsselung von Daten", true) );
+
+		$encryptionInput = new JUI\Input('encryptionKey');
+		$encryptionInput->setLabel('Kennwort (leer lassen fürs beibehalten des alten Kennworts): ');
+		$encryptionContainer->add($encryptionInput);
+
+		$encryptionContainer->nline();
+
+		$encryptionButton = new JUI\Button('Speichern', true);
+		$encryptionContainer->add($encryptionButton);
+
+	$jUI->add($encryptionContainer);
 	
 
 
