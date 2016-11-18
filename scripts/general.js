@@ -1057,3 +1057,20 @@ function isLast(pString, pChar) {
 function removeLast(pString) {
 	return pString.substring(0, pString.length - 1);
 }
+
+
+
+
+/* Async */
+function sendAction(pAction, pValue) {
+	console.log('test');
+
+	var object = {
+		plugin: getPlugin(),
+		action: pAction,
+		value: pValue
+	};
+
+
+	socket.send(JSON.stringify(object));
+}

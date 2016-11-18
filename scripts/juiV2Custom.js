@@ -24,6 +24,7 @@ function GuiPage() {
 
 		window.jui.action.addAction('openPlugin', openPlugin);
 		window.jui.action.addAction('openMedia', openMedia);
+		window.jui.action.addAction('sendAsync', sendAction);
 
 		window.jui.addOnBeforeParseListener(beforeParseListener);
 
