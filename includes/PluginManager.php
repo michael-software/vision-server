@@ -176,6 +176,25 @@ class PluginManager {
 		
 		return $pluginId;
 	}
+
+	function getLibrary($pName) {
+		$path = $this->basedir . '/libs/' . $pName . '/' . $pName . '.php';
+		if(file_exists($path)) {
+			return $path;
+		}
+
+		$path = $this->basedir . '/libs/' . $pName . '/lib.php';
+		if(file_exists($path)) {
+			return $path;
+		}
+
+		$path = $this->basedir . '/libs/' . $pName . '/index.php';
+		if(file_exists($path)) {
+			return $path;
+		}
+		
+		return $this->basedir . '/includes/empty.php';
+	}
 	
 	function getController() {
 		$a = func_get_args(); 
