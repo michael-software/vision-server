@@ -715,9 +715,9 @@ namespace JUI {
 
 		function setChecked($checked = TRUE) {
 			if($checked) {
-				$this->element['checked'] = 'true';
+				$this->element['checked'] = true;
 			} else {
-				$this->element['checked'] = '';
+				unset( $this->element['checked'] );
 			}
 		}
 	}
