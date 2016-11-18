@@ -31,6 +31,16 @@ if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManag
 	$jUI->add( $createFolder );
 }
 
+if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManager()->getParameter()->allowCreate === TRUE) {
+	if($pluginManager->getTemporary('showHidden', false)) {
+		$showHidden = new JUI\Button('Versteckte ausblenden');
+	} else {
+		$showHidden = new JUI\Button('Versteckte anzeigen');
+	}
+	$showHidden->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'hidden', $folder ) );
+	$jUI->add( $showHidden );
+}
+
 if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManager()->getParameter()->allowUpload === TRUE) {
 	$fileupload = new JUI\File('files');
 	$fileupload->setMultiple();
@@ -56,7 +66,7 @@ $folders = null;
 $files = null;
 
 foreach($pluginManager->fileManager->getFolder($folder) as $element) {
-	if(FileManager::isVisible($element['name'])) {
+	if(FileManager::isVisible($element['name']) || $pluginManager->getTemporary('showHidden', false)) {
 		if($element['type'] == "dir") {
 			$name = $element['name'];
 			
