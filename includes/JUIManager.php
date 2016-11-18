@@ -53,6 +53,12 @@ namespace JUI {
 
 			if($view instanceof View) {
 				$this->elements[] = $view;
+			} else if($view instanceof Header) {
+				$name = $view->getName();
+
+				if(!empty($name) && empty($this->head[$name])) {
+					$this->head[$name] = $view->getArray();
+				}
 			} else if(is_string($view)) {
 				$this->elements[] = new Text($view);
 			}
@@ -183,6 +189,25 @@ namespace JUI {
 	}
 
 	/* START MASTER CLASSES */
+	class Header {
+		protected $elements;
+		private $name;
+
+		function getArray() {
+			return $this->elements;
+		}
+
+		function setName($name) {
+			if(is_string($name)) {
+				$this->name = $name;
+			}
+		}
+
+		function getName() {
+			return $this->name;
+		}
+	}
+
 	class ClickView extends View {
 		function setClick($click) {
 			if($click instanceof Click) {
