@@ -263,13 +263,23 @@ class PluginManager {
 		$return['id']   = $pPlugin;
 		$return['name'] = $pluginName;
 		
+
+		if(file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png') AND file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon-color.png')) {
+			$return['icon'] = 'plugins/'.$pPlugin.'/images/'.'icon.png';
+			$return['icon-color'] = 'plugins/'.$pPlugin.'/images/'.'icon-color.png';
+		} else if(file_exists($this->basedir . 'plugins/'.$pPlugin.'/images/'.'icon.png')) {
+			$return['icon'] = 'plugins/'.$pPlugin.'/images/'.'icon.png';
+			$return['icon-color'] = 'plugins/'.$pPlugin.'/images/'.'icon.png';
+		}
+
+		/*
 		if(file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png') AND file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon-color.png')) {
 			$return['icon'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png');
 			$return['icon-color'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon-color.png');
 		} else if(file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png')) {
 			$return['icon'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png');
 			$return['icon-color'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png');
-		}
+		}*/
 		
 		return $return;
 	}
