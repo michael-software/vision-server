@@ -211,6 +211,9 @@ function getMimeFromExtension(extension) {
 	    case 'JPG':
 	        return 'image/*';
 	        break;
+		case 'TXT':
+	        return 'text/*';
+	        break;
 	    default:
 	        return 'file/*';
 	}
