@@ -54,7 +54,7 @@ namespace JUI {
 			if($view instanceof View) {
 				$this->elements[] = $view;
 			} else if(is_string($view)) {
-				$this->elements[] = new JUI\Text($view);
+				$this->elements[] = new Text($view);
 			}
 		}
 
