@@ -847,6 +847,8 @@ class PluginManager {
 			$this->fileManager = new FileManager($this->plugin);
 			$this->fileManager->forbidFilesystem();
 		}
+
+		return $this->fileManager;
 	}
 	
 	function triggerHourly() {
