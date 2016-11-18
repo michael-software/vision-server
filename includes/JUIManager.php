@@ -443,6 +443,7 @@ namespace JUI {
 		const openPlugin = 'openPlugin';
 		const openMedia = 'openMedia';
 		const openUrl = 'openUrl';
+		const openGallery = 'openGallery';
 		const toggleView = 'toggleView';
 		const addViews = 'addViews';
 		const submit = 'submit';
@@ -484,7 +485,9 @@ namespace JUI {
 			if($pAction === Click::openMedia) {
 				$pView = urlencode($pView);
 				return $pAction . '(\'' . $pName . '\', \'' . $pView . '\')';
-			}
+			} else if($pAction === Click::openGallery && $pName instanceof Gallery) {
+				return $pAction . '(\'' . $pName->getName() . '\', \'' . $pView . '\')';
+			} 
 
 			return $this->__construct4($pAction, $pName, $pView, '');
 		}
@@ -1041,6 +1044,33 @@ namespace JUI {
 				$this->element['click'][] = $row->click;
 				$this->element['longclick'][] = $row->longclick;
 			}
+		}
+	}
+
+	class Gallery extends Header {
+		function __construct() {
+			$a = func_get_args();
+			$i = func_num_args();
+
+			if (method_exists($this, $f='__construct'.$i)) {
+				call_user_func_array(array($this,$f), $a);
+			}
+		}
+
+		function __construct0() {
+			$this->setName(uniqid());
+		}
+
+		function __construct1($name) {
+			if(is_string($name)) {
+				$this->setName($name);
+			} else {
+				$this->setName(uniqid());
+			}
+		}
+
+		function add($url) {
+			$this->elements[] = $url;
 		}
 	}
 }
