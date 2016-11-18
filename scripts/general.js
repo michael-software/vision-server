@@ -21,6 +21,8 @@ var dragTimeout;
 var gui = null;
 var shareableId = [];
 
+var loadingTimeout;
+
 var isMobile = false;
 
 window.placeholder = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -324,14 +326,19 @@ function loadMenu() {
 }
 
 function showLoadingData() {
-	var heading = document.createElement('div');
-		heading.innerHTML = 'Lade Daten vom Server';
+	loadingTimeout = window.setTimeout(function() {
+		var heading = document.createElement('div');
+		heading.className = 'loadingCursor';
+		//heading.innerHTML = 'Lade Daten vom Server';
 	
-	overlay.setOverlayContent(heading);
-	overlay.show();
+		overlay.setOverlayContent(heading);
+		overlay.show();
+	}, 300);
 }
 
 function hideLoadingData() {
+	clearTimeout(loadingTimeout);
+
 	overlay.hide();
 }
 
