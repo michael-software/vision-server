@@ -929,12 +929,15 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 		
 		<div id="uploadzone">
             <div id="uploadzone-box">
-            	Dateien hierher ziehen
+				<img class="uploadzone-image" src="images/upload.png">
+            	<div class="uploadzone-text">Dateien hierher ziehen</div>
             </div>
         </div>
         
         <div id="mime-select">
-            Dateien hierher ziehen
+			<div id="mime-select-box">
+            	
+			</div>
         </div>
         
         <div id="share-button">

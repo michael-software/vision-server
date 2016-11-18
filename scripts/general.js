@@ -403,17 +403,24 @@ function openMedia(pType, pUrl) {
 		downloadFile(pUrl);
 	} else if(pType == "image") {
 		openImage(pUrl);
+	} else {
+		downloadFile(pUrl);
 	}
 }
 
 function openImage(pUrl) {
 
-	var image = document.createElement('img');
-	image.src = 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl);
-	image.style.maxWidth = '100%';
-	image.style.maxHeight = '100%';
+	var imageBox = document.createElement('div');
+	imageBox.className = 'image-box';
+
+		var image = document.createElement('img');
+		image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+		image.style.maxWidth = '100%';
+		image.style.maxHeight = '100%';
+
+	imageBox.appendChild(image);
 	
-	overlay.setOverlayContent(image);
+	overlay.setOverlayContent(imageBox);
 	overlay.show();
 }
 
@@ -425,7 +432,7 @@ function downloadFile(pUrl) {
 		_body.appendChild(downloadElement);
 	}
 	
-	downloadElement.setAttribute('src', 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl) );
+	downloadElement.setAttribute('src', 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token) );
 }
 
 function openMusic(pUrl) {
@@ -539,7 +546,7 @@ function openMusic(pUrl) {
 	
 	document.querySelector('#music-name').innerHTML = name;
 	
-	audioElement.src = 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl);
+	audioElement.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
 	audioElement.play();
 	audioElement.volume = 0.5;
 	
@@ -633,7 +640,7 @@ function openVideo(pUrl) {
 	overlay.setOverlayContent(videoElement);
 	overlay.show();
 	
-	videoElement.src = 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl);
+	videoElement.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
 	videoElement.play();
 }
 
