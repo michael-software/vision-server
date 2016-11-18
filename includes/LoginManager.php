@@ -93,7 +93,7 @@ class LoginManager {
 				$data = $this->jwtManager->getJwtData($jwtRequest);
 
 				if(!empty($data->sub) && $this->jwtManager->validateJwt($jwtRequest, $this->secret) == 2) {
-					$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, $this->secret, array('sub'=>$data->sub), 60);
+					$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, $this->secret, array('sub'=>$data->sub, 'jti'=>$data->jti), 60);
 					$jwtSignature = $this->jwtManager->getSignature($jwt);
 
 					$this->addJwtSignature($jwtSignature, $name='Endgerät', $data->sub);
@@ -166,10 +166,15 @@ class LoginManager {
 		} else {
 			$data = $this->jwtManager->getJwtData($jwtRequest);
 
+			if(empty($data->jti)) {
+				$data->jti = uniqid();
+			}
+
 			$_SESSION['id'] = $data->sub;
 			$this->user['id'] = $data->sub;
 			$this->user['username'] = $data->name;
 			$this->user['jwt'] = $jwtRequest;
+			$this->user['jwtId'] = $data->jti;
 
 			if(!empty($data->_sek)) {
 				$this->user['key'] = $data->_sek;
@@ -320,7 +325,10 @@ class LoginManager {
 	}
 	
 	function loginUserByToken($pToken) {
+		
+		/*
 		$json = json_decode(DatabaseManager::$table2);
+		
 		
 		$databaseManagerSecurityToken = new DatabaseManager();
 		$databaseManagerSecurityToken->openTable('authtokens', $json);
@@ -344,7 +352,48 @@ class LoginManager {
 				}
 			}
 		}
-		
+		*/
+
+
+		if($this->jwtManager->validateJwt($pToken, $this->secret) == 2) {
+			$data = $this->jwtManager->getJwtData($pToken);
+
+			$_SESSION['id'] = $data->sub;
+			$this->user['id'] = $data->sub;
+			$this->user['username'] = $data->name;
+			$this->user['jwt'] = $pToken;
+
+			if(!empty($data->_sek)) {
+				$this->user['key'] = $data->_sek;
+			}
+
+			$jwtInfo =  $this->getJwtInfoBySignature( $this->jwtManager->getSignature($pToken), $data->sub);
+
+			if( !empty($jwtInfo) && empty($jwtInfo['refused']) ) {
+				return true;
+			}
+		} else if($this->jwtManager->validateJwt($pToken, $this->secret) == 1) {
+			$data = $this->jwtManager->getJwtData($pToken);
+
+			if(empty($data->jti)) {
+				$data->jti = uniqid();
+			}
+
+			$_SESSION['id'] = $data->sub;
+			$this->user['id'] = $data->sub;
+			$this->user['username'] = $data->name;
+			$this->user['jwt'] = $pToken;
+			$this->user['jwtId'] = $data->jti;
+
+			if(!empty($data->_sek)) {
+				$this->user['key'] = $data->_sek;
+			}
+
+			return true;
+		}
+
+
+
 		if(constant('WEBSOCKET') != 1)
 			$this->getLogManager()->addLog('Ein Benutzer versuchte sich mit einem fehlerhaften Authtoken anzumelden (IP: ' . $_SERVER['REMOTE_ADDR'] . ')');
 		return false;
@@ -670,7 +719,9 @@ class LoginManager {
 	}
 	
 	public function getAuthtoken() {
-		if(!empty($_SESSION['authtoken'])) {
+		if(!empty($this->user) && !empty($this->user['jwtId'])) {
+			return $this->user['jwtId'];
+		} else if(!empty($_SESSION['authtoken'])) {
 			return $_SESSION['authtoken'];
 		}
 		
