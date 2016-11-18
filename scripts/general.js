@@ -127,6 +127,11 @@ window.ready(function () {
 		});
 		
 		document.querySelector('#uploadzone').addEventListener('drop', handleDropEvent, false);
+
+		document.querySelector('#uploadzone').addEventListener('click', function() {
+			document.querySelector('html').classList.remove('dragging');
+			unBlur();
+		}, false);
 		
 		document.addEventListener("keydown", function(e) {
 		  if ((e.keyCode == 83 || e.keyCode == 70) && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
@@ -137,19 +142,28 @@ window.ready(function () {
 		    location.hash = '';
 		  }
 		}, false);
+
+
+		document.querySelector('#mime-select').addEventListener('click', function() {
+			document.querySelector('html').classList.remove('dragging');
+			this.style.display = 'none';
+			unBlur();
+		}, false);
 	}
 });
 
 /* FileUploads */
-var filelist = [];  // Ein Array, das alle hochzuladenden Files enthält
+var filelist;  // Ein Array, das alle hochzuladenden Files enthält
 var totalSize = 0; // Enthält die Gesamtgröße aller hochzuladenden Dateien
 var totalProgress = 0; // Enthält den aktuellen Gesamtfortschritt
 var currentUpload = null; // Enthält die Datei, die aktuell hochgeladen wird
- 
+
 function handleDropEvent(event)
 {
     event.stopPropagation();
     event.preventDefault();
+
+	filelist = [];
  
     // event.dataTransfer.files enthält eine Liste aller gedroppten Dateien
     for (var i = 0; i < event.dataTransfer.files.length; i++) {
@@ -157,8 +171,14 @@ function handleDropEvent(event)
         totalSize += event.dataTransfer.files[i].size;  // Hinzufügen der Dateigröße zur Gesamtgröße
     }
     
-    var extension = getFileExtension(filelist[0]['name']);
-    openMimeSelect(extension);
+	console.log(filelist);
+
+	if(window.jui.tools.isArray(filelist) && filelist.length > 0) {
+		var extension = getFileExtension(filelist[0]['name']);
+		openMimeSelect(extension);
+	} else {
+		unBlur();
+	}
     
     document.querySelector('html').classList.remove('dragging');
     
@@ -167,8 +187,10 @@ function handleDropEvent(event)
 
 function openMimeSelect(mime) {
 	var mimeType = getMimeFromExtension(mime);
-	var root = document.querySelector('#mime-select');
+	var root = document.querySelector('#mime-select-box');
 	root.innerHTML = '';
+
+	console.log(mimeType, mimeTypes);
 	
 	if(mimeTypes[mimeType] != null) {
 		var array = [];
