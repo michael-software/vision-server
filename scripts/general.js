@@ -22,6 +22,7 @@ var gui = null;
 var shareableId = [];
 
 var loadingTimeout;
+var galleryIndex;
 
 var isMobile = false;
 
@@ -646,6 +647,89 @@ function musicTimeUpdate() {
 	}
 	
 	audioOverlayTime.innerHTML = currentTime+'/'+time;
+}
+
+function openGallery(gallery, index) {
+	var header = gui.getJuiHeader();
+
+	if(gallery && header && header[gallery] && window.jui.tools.isArray(header[gallery]) && header[gallery].length > 0) {
+		galleryArray = header[gallery];
+
+		if(!window.jui.tools.isNumeric(index)) {
+			index = 0;
+		} else {
+			index = parseInt(index);
+		}
+
+		if(!galleryArray[index]) {
+			index = 0;
+		}
+
+
+		galleryIndex = index;
+
+
+		var pUrl = galleryArray[index];
+
+		var imageBox = document.createElement('div');
+		imageBox.className = 'image-box';
+
+			var image = document.createElement('img');
+			image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+			image.style.maxWidth = '100%';
+			image.style.maxHeight = '100%';
+
+		imageBox.appendChild(image);
+
+
+			var next = document.createElement('div');
+				next.className = 'image-box__next';
+		
+		imageBox.appendChild(next);
+
+
+			var last = document.createElement('div');
+				last.className = 'image-box__last';
+		
+		imageBox.appendChild(last);
+
+
+		next.onclick = function() {
+			galleryNext(galleryArray, image, next, last);
+		}
+
+		last.onclick = function() {
+			galleryLast(galleryArray, image, next, last);
+		}
+
+		
+		overlay.setOverlayContent(imageBox);
+		overlay.show();
+	}
+}
+
+function galleryLast(galleryArray, image, next, last) {
+	if(galleryIndex-1 < 0) {
+		galleryIndex = galleryArray.length;
+	}
+
+	galleryIndex--;
+
+	var pUrl = galleryArray[galleryIndex];
+
+	image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+}
+
+function galleryNext(galleryArray, image, next, last) {
+	if(galleryIndex+1 >= galleryArray.length) {
+		galleryIndex = -1;
+	}
+
+	galleryIndex++;
+
+	var pUrl = galleryArray[galleryIndex];
+
+	image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
 }
 
 function openUrl(pUrl) {

@@ -322,6 +322,62 @@ ul.jui__list li:last-child {
 	box-shadow: 0 0 8px #444444;
 }
 
+
+.image-box {
+	position: relative;
+
+	background-color: #FFFFFF;
+
+	user-select: none;
+
+	box-shadow: 0 0 8px #444444;
+}
+
+.image-box__next, .image-box__last {
+	position: absolute;
+
+	top: 50%;
+
+	width: 50px;
+	height: 50px;
+
+	margin-top: -25px;
+
+	background-color: #FFFFFF;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: contain;
+
+	cursor: pointer;
+
+	opacity: 0.5;
+}
+
+.image-box__next:hover, .image-box__last:hover {
+	opacity: 0.8;
+}
+
+.image-box__next {
+	right: -50px;
+
+	background-image: url('../images/chevron-right.png');
+}
+
+.image-box__next:hover {
+	background-image: url('../images/chevron-right-red.png');
+}
+
+.image-box__last {
+	left: -50px;
+
+	background-image: url('../images/chevron-left.png');
+}
+
+.image-box__last:hover {
+	background-image: url('../images/chevron-left-red.png');
+}
+
+
 /* Input[range] override */
 input[type=range] {
 	-webkit-appearance: none;

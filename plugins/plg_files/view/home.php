@@ -64,6 +64,8 @@ if(!empty($folder)) {
 
 $folders = null;
 $files = null;
+$imageId = 0;
+$gallery = new JUI\Gallery();
 
 foreach($pluginManager->fileManager->getFolder($folder) as $element) {
 	if(FileManager::isVisible($element['name']) || $pluginManager->getTemporary('showHidden', false)) {
@@ -99,7 +101,12 @@ foreach($pluginManager->fileManager->getFolder($folder) as $element) {
 			
 			$name = $element['name'] . ' (' . $bytesString . ')';
 			
-			$click = new JUI\Click( JUI\Click::openMedia, $element['type'], $folder . $element['name'] );
+
+			$click = null;
+			if($element['type'] != 'image') {
+				$click = new JUI\Click( JUI\Click::openMedia, $element['type'], $folder . $element['name'] );
+			}
+			
 			$longclick = new JUI\Click( JUI\Click::openPlugin, $pluginManager, "filesettings", $folder . $element['name'] . '/' );
 			
 			
@@ -108,7 +115,7 @@ foreach($pluginManager->fileManager->getFolder($folder) as $element) {
 				$key .= count($files);
 			}
 			
-			$files[$key] = array("name"=>$name, "click"=>$click, "longclick"=>$longclick);
+			$files[$key] = array("name"=>$name, "click"=>$click, "longclick"=>$longclick, "path"=>$folder . $element['name'], "type"=>$element['type']);
 		}
 	}
 }
@@ -134,10 +141,20 @@ if(!empty($files) && is_array($files)) {
 		$name = $file['name'];
 		$click = $file['click'];
 		$longclick = $file['longclick'];
+
+		if($file['type'] == 'image') {
+			$gallery->add( $file['path'] );
+
+			$click = new JUI\Click( JUI\Click::openGallery, $gallery, $imageId);
+			//$click = new JUI\Click( JUI\Click::openMedia, $element['type'], $folder . $element['name'] );
+			$imageId++;
+		}
 		
 		$list->addItem($name, $click, $longclick);
 	}
 }
+
+$jUI->add($gallery);
 
 $jUI->add( $list );
 
