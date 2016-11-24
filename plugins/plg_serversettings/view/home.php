@@ -92,8 +92,10 @@ if($loginManager->isAllowed(LoginManager::STOP_SERVER) && $command == "restart")
 	die('{"redirect":["' . $pluginManager->getPluginName() . '", "home", ""]}');
 }
 
+
 if($loginManager->isAllowed(LoginManager::STOP_SERVER)) {
-	
+
+
 	$jUI->add(new JUI\Heading("Servereinstellungen"));
 	
 	$restart = new JUI\Button("Server neustarten");
@@ -106,7 +108,7 @@ if($loginManager->isAllowed(LoginManager::STOP_SERVER)) {
 	$shutdown->setLongClick(new JUI\Click(JUI\Click::openPlugin, $pluginManager, 'home', 'shutdown'));
 	$jUI->add($shutdown);
 	 
-	$shutdownStop = new JUI\Button("Server herunterfahren abbrechen");
+	$shutdownStop = new JUI\Button("Herunterfahren abbrechen");
 	$shutdownStop->setColor('FF0000');
 	$shutdownStop->setLongClick(new JUI\Click(JUI\Click::openPlugin, $pluginManager, 'home', 'shutdownstop'));
 	$jUI->add($shutdownStop);
@@ -118,28 +120,28 @@ if($loginManager->isAllowed(LoginManager::STOP_SERVER)) {
 	$jUI->newline();
 	$jUI->newline();
 	
-	$shutdown30 = new JUI\Button("Server in 30 Minuten herunterfahren");
+	$shutdown30 = new JUI\Button("In 30 Minuten herunterfahren");
 	$shutdown30->setColor('FF0000');
 	$shutdown30->setLongClick(new JUI\Click(JUI\Click::openPlugin, $pluginManager, 'home', 'shutdown30'));
 	$jUI->add($shutdown30);
 	
 	$jUI->newline();
 	
-	$shutdown60 = new JUI\Button("Server in 60 Minuten herunterfahren");
+	$shutdown60 = new JUI\Button("In 60 Minuten herunterfahren");
 	$shutdown60->setColor('FF0000');
 	$shutdown60->setLongClick(new JUI\Click(JUI\Click::openPlugin, $pluginManager, 'home', 'shutdown60'));
 	$jUI->add($shutdown60);
 	
 	$jUI->newline();
 	
-	$shutdown90 = new JUI\Button("Server in 90 Minuten herunterfahren");
+	$shutdown90 = new JUI\Button("In 90 Minuten herunterfahren");
 	$shutdown90->setColor('FF0000');
 	$shutdown90->setLongClick(new JUI\Click(JUI\Click::openPlugin, $pluginManager, 'home', 'shutdown90'));
 	$jUI->add($shutdown90);
 	
 	$jUI->newline();
 	
-	$shutdown120 = new JUI\Button("Server in 120 Minuten herunterfahren");
+	$shutdown120 = new JUI\Button("In 120 Minuten herunterfahren");
 	$shutdown120->setColor('FF0000');
 	$shutdown120->setLongClick(new JUI\Click(JUI\Click::openPlugin, $pluginManager, 'home', 'shutdown120'));
 	$jUI->add($shutdown120);
@@ -165,76 +167,90 @@ if($loginManager->isAllowed(LoginManager::STOP_SERVER) || $loginManager->isAllow
 	$jUI->hline();
 }
 
+
 $jUI->add( new JUI\Heading("Gameserver") );
 
 if( $pluginManager->isInstalled('plg_ts3viewer') ) {
 	$ts3widget = new JUI\Widget('plg_ts3viewer', 'settings');
+	$ts3widget->setPadding(20);
+	$ts3widget->setMarginTop(15);
+	$ts3widget->setMarginBottom(15);
+	$ts3widget->setBackground('#E8E8E8');
 	$jUI->add( $ts3widget );
-	
-	$jUI->newline();
-	$jUI->newline();
 }
 
 if( $pluginManager->isInstalled('plg_mcviewer') ) {
 	$mcwidget = new JUI\Widget('plg_mcviewer', 'settings');
+	$mcwidget->setPadding(20);
+	$mcwidget->setMarginTop(15);
+	$mcwidget->setMarginBottom(15);
+	$mcwidget->setBackground('#E8E8E8');
 	$jUI->add( $mcwidget );
-	
-	$jUI->newline();
-	$jUI->newline();
 }
+
 
 /* CSGO-Server */
-$csgoHeading = new JUI\Heading("CS:GO");
-$csgoHeading->setSmall(TRUE);
-$jUI->add( $csgoHeading );
+$csgowidget = new JUI\Container();
+$csgowidget->setPadding(20);
+$csgowidget->setMarginTop(15);
+$csgowidget->setMarginBottom(15);
+$csgowidget->setBackground('#E8E8E8');
 
-$table = new JUI\Table();
-	$row = new JUI\Table\Row();
-	$row->addColumn("Status:");
-	
-	ob_start();
-	passthru('sudo /var/www/sh/csgostatus.sh');
-	$status = ob_get_clean();
-	
-	if(strpos($status, "csgo") === false) {
-		$csgoStatus = new JUI\Text("Server offline");
-		$csgoStatus->setColor("FF0000");
-	} else {
-		$csgoStatus = new JUI\Text("Server offline");
-		$csgoStatus->setColor("FF0000");
+
+	$csgoHeading = new JUI\Heading("CS:GO");
+	$csgoHeading->setSmall(TRUE);
+	$csgowidget->add( $csgoHeading );
+
+	$table = new JUI\Table();
+	$table->setWidth('100%');
+	$table->setMarginBottom(15);
+	$table->setMarginTop(15);
+		$row = new JUI\Table\Row();
+		$row->addColumn("Status:");
+		
+		ob_start();
+		passthru('sudo /var/www/sh/csgostatus.sh');
+		$status = ob_get_clean();
+		
+		
+		if(strpos($status, "csgo") === false) {
+			$csgoStatus = new JUI\Text("Server offline");
+			$csgoStatus->setColor("FF0000");
+		} else {
+			$csgoStatus = new JUI\Text("Server offline");
+			$csgoStatus->setColor("FF0000");
+		}
+		
+		$csgoStatus->setAlign( JUI\Text::RIGHT );
+		$row->addColumn( $csgoStatus );
+	$table->addRow($row);
+	$csgowidget->add($table);
+
+	if($loginManager->isAllowed(LoginManager::STOP_SERVER)) {
+		$csgoStart = new JUI\Button("CS:GO Server starten");
+		$csgoStart->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'start', 'csgo') );
+		$csgowidget->add( $csgoStart );
+		
+		$csgoStop = new JUI\Button("CS:GO Server stoppen");
+		$csgoStop->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'stop', 'csgo') );
+		$csgowidget->add( $csgoStop );
+		
+		$csgoUpdate = new JUI\Button("CS:GO Server updaten");
+		$csgoUpdate->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'update', 'csgo') );
+		$csgowidget->add( $csgoUpdate );
 	}
-	
-	$csgoStatus->setAlign( JUI\Text::RIGHT );
-	$row->addColumn( $csgoStatus );
-$table->addRow($row);
-$jUI->add($table);
 
-if($loginManager->isAllowed(LoginManager::STOP_SERVER)) {
-	$csgoStart = new JUI\Button("CS:GO Server starten");
-	$csgoStart->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'start', 'csgo') );
-	$jUI->add( $csgoStart );
-	
-	$csgoStop = new JUI\Button("CS:GO Server stoppen");
-	$csgoStop->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'stop', 'csgo') );
-	$jUI->add( $csgoStop );
-	
-	$csgoUpdate = new JUI\Button("CS:GO Server updaten");
-	$csgoUpdate->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'update', 'csgo') );
-	$jUI->add( $csgoUpdate );
-}
+$jUI->add($csgowidget);
 
-$jUI->newline();
-$jUI->newline();
-
-
-/* ARK-Server */
+/* ARK-Server *//*
 if( $pluginManager->isInstalled('plg_arkviewer') ) {
-	$ts3widget = new JUI\Widget('plg_arkviewer', 'settings');
-	$jUI->add( $ts3widget );
-}
-
-$jUI->newline();
-$jUI->newline();
+	$arkwidget = new JUI\Widget('plg_arkviewer', 'settings');
+	$arkwidget->setPadding(20);
+	$arkwidget->setMarginTop(15);
+	$arkwidget->setMarginBottom(15);
+	$arkwidget->setBackground('#E8E8E8');
+	$jUI->add( $arkwidget );
+}*/
 
 if($loginManager->isAllowed(LoginManager::MODIFY_USERS)) {
 	

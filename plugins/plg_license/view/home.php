@@ -10,5 +10,4 @@ $list->addItem("Websocket client - (c) Paragi Aps 2013, Simon Riget - own licens
 $list->addItem("TouchImageView (android) - (c) 2012, Michael Ortiz - own license", new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'touchimageview' ));
 
 $jUI->add($list);
-
 ?>

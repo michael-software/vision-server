@@ -60,7 +60,9 @@ class JwtManager {
         if(!empty($_sek))
 		    $payload['_sek'] = $_sek;
 
-        $payload['jti'] = uniqid();
+        if(empty($pPayload['jti'])) {
+            $payload['jti'] = uniqid();
+        }
 
         $payload = array_merge($pPayload, $payload);
 

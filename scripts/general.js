@@ -21,6 +21,9 @@ var dragTimeout;
 var gui = null;
 var shareableId = [];
 
+var loadingTimeout;
+var galleryIndex;
+
 var isMobile = false;
 
 window.placeholder = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -125,6 +128,11 @@ window.ready(function () {
 		});
 		
 		document.querySelector('#uploadzone').addEventListener('drop', handleDropEvent, false);
+
+		document.querySelector('#uploadzone').addEventListener('click', function() {
+			document.querySelector('html').classList.remove('dragging');
+			unBlur();
+		}, false);
 		
 		document.addEventListener("keydown", function(e) {
 		  if ((e.keyCode == 83 || e.keyCode == 70) && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
@@ -135,19 +143,28 @@ window.ready(function () {
 		    location.hash = '';
 		  }
 		}, false);
+
+
+		document.querySelector('#mime-select').addEventListener('click', function() {
+			document.querySelector('html').classList.remove('dragging');
+			this.style.display = 'none';
+			unBlur();
+		}, false);
 	}
 });
 
 /* FileUploads */
-var filelist = [];  // Ein Array, das alle hochzuladenden Files enthält
+var filelist;  // Ein Array, das alle hochzuladenden Files enthält
 var totalSize = 0; // Enthält die Gesamtgröße aller hochzuladenden Dateien
 var totalProgress = 0; // Enthält den aktuellen Gesamtfortschritt
 var currentUpload = null; // Enthält die Datei, die aktuell hochgeladen wird
- 
+
 function handleDropEvent(event)
 {
     event.stopPropagation();
     event.preventDefault();
+
+	filelist = [];
  
     // event.dataTransfer.files enthält eine Liste aller gedroppten Dateien
     for (var i = 0; i < event.dataTransfer.files.length; i++) {
@@ -155,8 +172,14 @@ function handleDropEvent(event)
         totalSize += event.dataTransfer.files[i].size;  // Hinzufügen der Dateigröße zur Gesamtgröße
     }
     
-    var extension = getFileExtension(filelist[0]['name']);
-    openMimeSelect(extension);
+	console.log(filelist);
+
+	if(window.jui.tools.isArray(filelist) && filelist.length > 0) {
+		var extension = getFileExtension(filelist[0]['name']);
+		openMimeSelect(extension);
+	} else {
+		unBlur();
+	}
     
     document.querySelector('html').classList.remove('dragging');
     
@@ -165,8 +188,10 @@ function handleDropEvent(event)
 
 function openMimeSelect(mime) {
 	var mimeType = getMimeFromExtension(mime);
-	var root = document.querySelector('#mime-select');
+	var root = document.querySelector('#mime-select-box');
 	root.innerHTML = '';
+
+	console.log(mimeType, mimeTypes);
 	
 	if(mimeTypes[mimeType] != null) {
 		var array = [];
@@ -210,6 +235,9 @@ function getMimeFromExtension(extension) {
 	        break;
 	    case 'JPG':
 	        return 'image/*';
+	        break;
+		case 'TXT':
+	        return 'text/*';
 	        break;
 	    default:
 	        return 'file/*';
@@ -321,14 +349,19 @@ function loadMenu() {
 }
 
 function showLoadingData() {
-	var heading = document.createElement('div');
-		heading.innerHTML = 'Lade Daten vom Server';
+	loadingTimeout = window.setTimeout(function() {
+		var heading = document.createElement('div');
+		heading.className = 'loadingCursor';
+		//heading.innerHTML = 'Lade Daten vom Server';
 	
-	overlay.setOverlayContent(heading);
-	overlay.show();
+		overlay.setOverlayContent(heading);
+		overlay.show();
+	}, 300);
 }
 
 function hideLoadingData() {
+	clearTimeout(loadingTimeout);
+
 	overlay.hide();
 }
 
@@ -403,17 +436,24 @@ function openMedia(pType, pUrl) {
 		downloadFile(pUrl);
 	} else if(pType == "image") {
 		openImage(pUrl);
+	} else {
+		downloadFile(pUrl);
 	}
 }
 
 function openImage(pUrl) {
 
-	var image = document.createElement('img');
-	image.src = 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl);
-	image.style.maxWidth = '100%';
-	image.style.maxHeight = '100%';
+	var imageBox = document.createElement('div');
+	imageBox.className = 'image-box';
+
+		var image = document.createElement('img');
+		image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+		image.style.maxWidth = '100%';
+		image.style.maxHeight = '100%';
+
+	imageBox.appendChild(image);
 	
-	overlay.setOverlayContent(image);
+	overlay.setOverlayContent(imageBox);
 	overlay.show();
 }
 
@@ -425,7 +465,7 @@ function downloadFile(pUrl) {
 		_body.appendChild(downloadElement);
 	}
 	
-	downloadElement.setAttribute('src', 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl) );
+	downloadElement.setAttribute('src', 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token) );
 }
 
 function openMusic(pUrl) {
@@ -539,7 +579,7 @@ function openMusic(pUrl) {
 	
 	document.querySelector('#music-name').innerHTML = name;
 	
-	audioElement.src = 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl);
+	audioElement.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
 	audioElement.play();
 	audioElement.volume = 0.5;
 	
@@ -609,6 +649,89 @@ function musicTimeUpdate() {
 	audioOverlayTime.innerHTML = currentTime+'/'+time;
 }
 
+function openGallery(gallery, index) {
+	var header = gui.getJuiHeader();
+
+	if(gallery && header && header[gallery] && window.jui.tools.isArray(header[gallery]) && header[gallery].length > 0) {
+		galleryArray = header[gallery];
+
+		if(!window.jui.tools.isNumeric(index)) {
+			index = 0;
+		} else {
+			index = parseInt(index);
+		}
+
+		if(!galleryArray[index]) {
+			index = 0;
+		}
+
+
+		galleryIndex = index;
+
+
+		var pUrl = galleryArray[index];
+
+		var imageBox = document.createElement('div');
+		imageBox.className = 'image-box';
+
+			var image = document.createElement('img');
+			image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+			image.style.maxWidth = '100%';
+			image.style.maxHeight = '100%';
+
+		imageBox.appendChild(image);
+
+
+			var next = document.createElement('div');
+				next.className = 'image-box__next';
+		
+		imageBox.appendChild(next);
+
+
+			var last = document.createElement('div');
+				last.className = 'image-box__last';
+		
+		imageBox.appendChild(last);
+
+
+		next.onclick = function() {
+			galleryNext(galleryArray, image, next, last);
+		}
+
+		last.onclick = function() {
+			galleryLast(galleryArray, image, next, last);
+		}
+
+		
+		overlay.setOverlayContent(imageBox);
+		overlay.show();
+	}
+}
+
+function galleryLast(galleryArray, image, next, last) {
+	if(galleryIndex-1 < 0) {
+		galleryIndex = galleryArray.length;
+	}
+
+	galleryIndex--;
+
+	var pUrl = galleryArray[galleryIndex];
+
+	image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+}
+
+function galleryNext(galleryArray, image, next, last) {
+	if(galleryIndex+1 >= galleryArray.length) {
+		galleryIndex = -1;
+	}
+
+	galleryIndex++;
+
+	var pUrl = galleryArray[galleryIndex];
+
+	image.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+}
+
 function openUrl(pUrl) {
 	window.open(pUrl,'_blank');
 }
@@ -633,7 +756,7 @@ function openVideo(pUrl) {
 	overlay.setOverlayContent(videoElement);
 	overlay.show();
 	
-	videoElement.src = 'ajax.php?action=getFile&file='+encodeURIComponent(pUrl);
+	videoElement.src = 'api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
 	videoElement.play();
 }
 
@@ -1049,4 +1172,21 @@ function isLast(pString, pChar) {
 
 function removeLast(pString) {
 	return pString.substring(0, pString.length - 1);
+}
+
+
+
+
+/* Async */
+function sendAction(pAction, pValue) {
+	console.log('test');
+
+	var object = {
+		plugin: getPlugin(),
+		action: pAction,
+		value: pValue
+	};
+
+
+	socket.send(JSON.stringify(object));
 }

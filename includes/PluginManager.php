@@ -176,6 +176,25 @@ class PluginManager {
 		
 		return $pluginId;
 	}
+
+	function getLibrary($pName) {
+		$path = $this->basedir . '/libs/' . $pName . '/' . $pName . '.php';
+		if(file_exists($path)) {
+			return $path;
+		}
+
+		$path = $this->basedir . '/libs/' . $pName . '/lib.php';
+		if(file_exists($path)) {
+			return $path;
+		}
+
+		$path = $this->basedir . '/libs/' . $pName . '/index.php';
+		if(file_exists($path)) {
+			return $path;
+		}
+		
+		return $this->basedir . '/includes/empty.php';
+	}
 	
 	function getController() {
 		$a = func_get_args(); 
@@ -244,13 +263,23 @@ class PluginManager {
 		$return['id']   = $pPlugin;
 		$return['name'] = $pluginName;
 		
+
+		if(file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png') AND file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon-color.png')) {
+			$return['icon'] = 'plugins/'.$pPlugin.'/images/'.'icon.png';
+			$return['icon-color'] = 'plugins/'.$pPlugin.'/images/'.'icon-color.png';
+		} else if(file_exists($this->basedir . 'plugins/'.$pPlugin.'/images/'.'icon.png')) {
+			$return['icon'] = 'plugins/'.$pPlugin.'/images/'.'icon.png';
+			$return['icon-color'] = 'plugins/'.$pPlugin.'/images/'.'icon.png';
+		}
+
+		/*
 		if(file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png') AND file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon-color.png')) {
 			$return['icon'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png');
 			$return['icon-color'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon-color.png');
 		} else if(file_exists($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png')) {
 			$return['icon'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png');
 			$return['icon-color'] = FileManager::getImageHashByPath($this->basedir . '/plugins/'.$pPlugin.'/images/'.'icon.png');
-		}
+		}*/
 		
 		return $return;
 	}
@@ -818,6 +847,8 @@ class PluginManager {
 			$this->fileManager = new FileManager($this->plugin);
 			$this->fileManager->forbidFilesystem();
 		}
+
+		return $this->fileManager;
 	}
 	
 	function triggerHourly() {

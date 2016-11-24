@@ -27,8 +27,7 @@
 
 	$jUI->add(new JUI\Heading($value['name']));
 
-	$textarea = new JUI\Input("noteContent");
-	$textarea->setPreset( JUI\Input::MULTILINE );
+	$textarea = new JUI\Editor("noteContent");
 	$textarea->setWidth('100%');
 	$textarea->setHeight(200);
 	$textarea->setValue($value['text']);

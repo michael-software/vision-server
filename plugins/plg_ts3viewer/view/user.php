@@ -47,7 +47,7 @@ if($ts3viewer->connect()) {
 			echo '[';
 			echo '{"type":"heading", "value":"' . $clientinfo['client_nickname'] . '"},';
 			echo '{"type":"headingSmall","value":"Nachricht verschicken"},{"type":"input","name":"message","value":"","focus":true, "hint":"Nachricht"},';
-			echo '{"type":"submit","value":"Abschicken"},{"type":"nl"},{"type":"nl"},';
+			echo '{"type":"button","value":"Abschicken","click":"submit()"},{"type":"nl"},{"type":"nl"},';
 			echo '{"type":"button","value":"Client kicken","click":"openPlugin(\'' . $pluginManager->getPluginName() . '\',\'kick\',\'' . $command . '\')"},';
 			echo '{"type":"button","value":"Client vom Server kicken","click":"openPlugin(\'' . $pluginManager->getPluginName() . '\',\'serverkick\',\'' . $command . '\')"},';
 			echo '{"type":"button","value":"Client verschieben","click":"openPlugin(\'' . $pluginManager->getPluginName() . '\',\'move\',\'' . $command . '\')"},';

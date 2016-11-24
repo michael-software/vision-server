@@ -108,10 +108,12 @@ class FileManager {
 		if(!empty($extension)) {
 			if($extension == "MP3") {
 				return "music";
-			} else if($extension == "MP4") {
+			} else if($extension == "MP4" || $extension == "WEBM") {
 				return "video";
 			} else if($extension == "JPEG" || $extension == "JPG" || $extension == "PNG" || $extension == "GIF") {
 				return "image";
+			} else if($extension == "TXT") {
+				return "text";
 			} else if($extension == "TMPDL") {
 				return "tmpdl";
 			}
@@ -387,6 +389,42 @@ class FileManager {
 		} else {
 			mkdir($path . '/' . $pName, 0744, true);
 		}
+	}
+
+	function getFileString($pPath, $type=FileManager::FILESYSTEM_PRIVATE) {
+		if($type == FileManager::FILESYSTEM_PLUGIN_PUBLIC) {
+			$path = $this->pluginFiles . $pPath;
+		} else if($type == FileManager::FILESYSTEM_PLUGIN_PRIVATE) {
+			$path = $this->userInfo . $this->plugin . '/' . $pPath;
+		} else if($type == FileManager::FILESYSTEM_PRIVATE && !$this->secure) {
+			$path = $this->userFiles . $pPath;
+		}
+
+		return file_get_contents($path);
+
+	}
+
+	function rename($oldname, $newname, $type=FileManager::FILESYSTEM_PRIVATE) {
+		if($type == FileManager::FILESYSTEM_PLUGIN_PUBLIC) {
+			$path = $this->pluginFiles . $oldname;
+			$new_path = $this->pluginFiles . $newname;
+		} else if($type == FileManager::FILESYSTEM_PLUGIN_PRIVATE) {
+			$path = $this->userInfo . $this->plugin . '/' . $oldname;
+			$new_path = $this->userInfo . $this->plugin . '/' . $newname;
+		} else if($type == FileManager::FILESYSTEM_PRIVATE && !$this->secure) {
+			$path = $this->userFiles . $oldname;
+			$new_path = $this->userFiles . $newname;
+		}
+
+		if( ($this->isFolder($oldname) || $this->fileExists($oldname, true, $type)) && 
+				(!$this->isFolder($newname) && !$this->fileExists($newname, true, $type)) )  {
+			return rename($path, $new_path);
+		} else {
+			//mkdir($path . '/' . $pName, 0744, true);
+			
+		}
+
+		return false;
 	}
 	
 	function getBytesString($bytes) {

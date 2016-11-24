@@ -615,7 +615,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 						formData.append('username', document.querySelector('#username-login').value);
 						formData.append('password', document.querySelector('#password-login').value);
 
-					window.jui.tools.requestSite('ajax.php?action=login', formData, null, function (data) {
+					window.jui.tools.requestSite('api/login.php?action=login', formData, null, function (data) {
 						parseLogin(data);
 					});
 				}, false);
@@ -900,7 +900,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 		
 		<div id="login">
 			<br /><br />
-			<form action="ajax.php?action=login" method="post">
+			<form action="api/login.php?action=login" method="post">
 				<label for="username-login">Benutzername</label><br/><input type="text" name="username" id="username-login" placeholder="Benutzername"><br /><br />
 				<label for="password-login">Kennwort</label><br/><input type="password" name="password" id="password-login" placeholder="Kennwort"><br /><br /><br />
 				<input type="submit" value="Anmelden">
@@ -929,12 +929,15 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 		
 		<div id="uploadzone">
             <div id="uploadzone-box">
-            	Dateien hierher ziehen
+				<img class="uploadzone-image" src="images/upload.png">
+            	<div class="uploadzone-text">Dateien hierher ziehen</div>
             </div>
         </div>
         
         <div id="mime-select">
-            Dateien hierher ziehen
+			<div id="mime-select-box">
+            	
+			</div>
         </div>
         
         <div id="share-button">

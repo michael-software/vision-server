@@ -64,7 +64,7 @@ class echoServer extends WebSocketServer {
 		$parts = explode(" ", $message);
 		
 		if(strtoupper($parts[0]) === strtoupper('login') && !empty($parts[1])) {
-			if($loginManager->loginUserByToken($parts[1])) {
+			if($loginManager->loginUserByJwt($parts[1])) {
 				$user->userid = $loginManager->getId();
 				$user->allowedServerNotify = $loginManager->isAllowed(LoginManager::SERVER_NOTIFY);
 				$user->group = $loginManager->getGroup();
@@ -122,7 +122,7 @@ class echoServer extends WebSocketServer {
 			}
 		} else if(strtoupper($parts[0]) === strtoupper('triggerhourly')) {
 			triggerhourly();
-		}  else if(strtoupper($parts[0]) === strtoupper('triggerminutely')) {
+		} else if(strtoupper($parts[0]) === strtoupper('triggerminutely')) {
 			triggerminutely();
 		} else if(strtoupper($parts[0]) === strtoupper('disconnect')) {
 			$this->disconnect($user->socket);

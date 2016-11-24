@@ -71,6 +71,20 @@ class Toolkit {
         $rgb = Toolkit::hex2rgb($hex);
 		return Toolkit::rgb2hex( Toolkit::rgbContrastColor($rgb) );
     }
+
+	static function startsWith($haystack, $needle) {
+		$length = strlen($needle);
+		return (substr($haystack, 0, $length) === $needle);
+	}
+
+	static function endsWith($haystack, $needle) {
+		$length = strlen($needle);
+		if ($length == 0) {
+			return true;
+		}
+
+		return (substr($haystack, -$length) === $needle);
+	}
 }
 
 ?>

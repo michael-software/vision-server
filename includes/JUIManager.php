@@ -53,8 +53,14 @@ namespace JUI {
 
 			if($view instanceof View) {
 				$this->elements[] = $view;
+			} else if($view instanceof Header) {
+				$name = $view->getName();
+
+				if(!empty($name) && empty($this->head[$name])) {
+					$this->head[$name] = $view->getArray();
+				}
 			} else if(is_string($view)) {
-				$this->elements[] = new JUI\Text($view);
+				$this->elements[] = new Text($view);
 			}
 		}
 
@@ -183,6 +189,25 @@ namespace JUI {
 	}
 
 	/* START MASTER CLASSES */
+	class Header {
+		protected $elements;
+		private $name;
+
+		function getArray() {
+			return $this->elements;
+		}
+
+		function setName($name) {
+			if(is_string($name)) {
+				$this->name = $name;
+			}
+		}
+
+		function getName() {
+			return $this->name;
+		}
+	}
+
 	class ClickView extends View {
 		function setClick($click) {
 			if($click instanceof Click) {
@@ -418,6 +443,7 @@ namespace JUI {
 		const openPlugin = 'openPlugin';
 		const openMedia = 'openMedia';
 		const openUrl = 'openUrl';
+		const openGallery = 'openGallery';
 		const toggleView = 'toggleView';
 		const addViews = 'addViews';
 		const submit = 'submit';
@@ -459,7 +485,9 @@ namespace JUI {
 			if($pAction === Click::openMedia) {
 				$pView = urlencode($pView);
 				return $pAction . '(\'' . $pName . '\', \'' . $pView . '\')';
-			}
+			} else if($pAction === Click::openGallery && $pName instanceof Gallery) {
+				return $pAction . '(\'' . $pName->getName() . '\', \'' . $pView . '\')';
+			} 
 
 			return $this->__construct4($pAction, $pName, $pView, '');
 		}
@@ -715,9 +743,9 @@ namespace JUI {
 
 		function setChecked($checked = TRUE) {
 			if($checked) {
-				$this->element['checked'] = 'true';
+				$this->element['checked'] = true;
 			} else {
-				$this->element['checked'] = '';
+				unset( $this->element['checked'] );
 			}
 		}
 	}
@@ -1016,6 +1044,33 @@ namespace JUI {
 				$this->element['click'][] = $row->click;
 				$this->element['longclick'][] = $row->longclick;
 			}
+		}
+	}
+
+	class Gallery extends Header {
+		function __construct() {
+			$a = func_get_args();
+			$i = func_num_args();
+
+			if (method_exists($this, $f='__construct'.$i)) {
+				call_user_func_array(array($this,$f), $a);
+			}
+		}
+
+		function __construct0() {
+			$this->setName(uniqid());
+		}
+
+		function __construct1($name) {
+			if(is_string($name)) {
+				$this->setName($name);
+			} else {
+				$this->setName(uniqid());
+			}
+		}
+
+		function add($url) {
+			$this->elements[] = $url;
 		}
 	}
 }

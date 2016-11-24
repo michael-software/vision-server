@@ -6,6 +6,7 @@ function GuiPage() {
 
 	var _tools = window.jui.tools;
 	var _body = document.querySelector('body');
+	var _juiHead = null;
 	
 	function GuiPage(pRoot) {
 		if(pRoot == null) {
@@ -24,6 +25,8 @@ function GuiPage() {
 
 		window.jui.action.addAction('openPlugin', openPlugin);
 		window.jui.action.addAction('openMedia', openMedia);
+		window.jui.action.addAction('openGallery', openGallery);
+		window.jui.action.addAction('sendAsync', sendAction);
 
 		window.jui.addOnBeforeParseListener(beforeParseListener);
 
@@ -53,6 +56,10 @@ function GuiPage() {
 	this.requestParse = function (url, callback) {
 		window.jui.requestParse(url, null, null, callback);
 	}
+
+	this.getJuiHeader = function() {
+		return _juiHead;
+	}
 	
 	
 	function setHeaders() {
@@ -65,6 +72,8 @@ function GuiPage() {
 	}
 
 	function parseHead (pJson) {
+		_juiHead = pJson;
+
 		if ( !window.jui.tools.empty(pJson['jwt']) ) {
 			setStorage('token', pJson['jwt']);
 			window.token = pJson['jwt'];
