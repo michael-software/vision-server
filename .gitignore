@@ -63,3 +63,5 @@ plugins/plg_homecontrol_dmx/
 plugins/plg_email/
 plugins/plg_arkviewer/
 wolserver/
+webdav2/SabreDAV/
+.idea/
