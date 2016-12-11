@@ -24,12 +24,12 @@
 
 	$passwordInput = new JUI\Input("notePassword");
 	$passwordInput->setPreset(JUI\Input::PASSWORD);
-	$jUI->add($passwordInput);
+    $passwordInput->setLabel("Kennwort: ");
+    $jUI->add($passwordInput);
 
 	$jUI->nline(2);
 
-	$textarea = new JUI\Input("noteContent");
-	$textarea->setPreset( JUI\Input::MULTILINE );
+	$textarea = new JUI\Editor("noteContent");
 	$textarea->setWidth('100%');
 	$textarea->setHeight(200);
 	$jUI->add($textarea);
