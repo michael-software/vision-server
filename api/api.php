@@ -1,5 +1,11 @@
 <?php
 
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: *');
+
+if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+    header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+
 require dirname(dirname(__FILE__)) . '/includes/PluginManager.php';
 require dirname(dirname(__FILE__)) . '/includes/LoginManager.php';
 
