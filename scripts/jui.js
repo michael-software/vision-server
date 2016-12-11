@@ -107,13 +107,20 @@
 			name: name,
 			element: element
 		});
-	}
+	};
+
+	jui.registerSubmitCallback = function (name, callback) {
+		sendElements.push({
+			name: name,
+			element: callback
+		});
+	};
 
 	jui.addOnBeforeParseListener = function(callback) {
 		if(!_tools.empty(callback) && _tools.isFunction(callback)) {
 			beforeParseCallback = callback;
 		}
-	}
+	};
 
 	jui.registerCustomSingleLineElement = function (type, constructClass, shType) {
 		if(_tools.empty(shType)) shType = type;
@@ -123,7 +130,7 @@
 			construct: constructClass,
 			shType: shType
 		})
-	}
+	};
 
 	jui.registerCustomElement = function (type, constructClass, shType) {
 		if(_tools.empty(shType)) shType = type;
@@ -133,7 +140,7 @@
 			construct: constructClass,
 			shType: shType
 		})
-	}
+	};
 
 	var parseHead = function(jsonObject) {
 		if (jsonObject['bgcolor'] != null) {
@@ -143,7 +150,7 @@
 		if(parseHeadCallback !== null) {
 			parseHeadCallback(jsonObject);
 		}
-	}
+	};
 
 	var parseElement = function(jsonObject, allElements) {
 		if(_tools.empty(allElements)) allElements = true;
@@ -185,7 +192,7 @@
 		}
 
 		return el;
-	}
+	};
 
 	var parseSingleLineElements = function(jsonObject) {
 		var el = null;
@@ -258,7 +265,7 @@
 
 	jui.getHeaders = function() {
 		return headers;
-	}
+	};
 
 	jui.submit = function(url) {
 		var formData = new FormData();
@@ -269,28 +276,34 @@
 			var element = sendElements[i].element;
 			var tagName = element.tagName;
 
-			if(tagName && tagName.toLowerCase() == "input" &&
-				 		(element.type.toLowerCase() == "text" ||
-						 element.type.toLowerCase() == "password" ||
-						 element.type.toLowerCase() == "number" ||
-						 element.type.toLowerCase() == "range" ||
-						 element.type.toLowerCase() == "color" ||
-						 element.type.toLowerCase() == "date")) {
-						
-				
-				if(!_tools.empty(element.value)) {
-					formData.append(name, element.value);
+			if(_tools.isFunction(element)) {
+				var result = element(jui);
+
+				if(result !== undefined && result !== null) {
+					formData.append(name, result);
 				}
+			} else if(tagName && tagName.toLowerCase() == "input" &&
+					(element.type.toLowerCase() == "text" ||
+					element.type.toLowerCase() == "password" ||
+					element.type.toLowerCase() == "number" ||
+					element.type.toLowerCase() == "range" ||
+					element.type.toLowerCase() == "color" ||
+					element.type.toLowerCase() == "date")) {
+
+
+					if(!_tools.empty(element.value)) {
+						formData.append(name, element.value);
+					}
 			} else if(tagName && tagName.toLowerCase() == "select") {
 				if( !_tools.empty(element.options) && !_tools.empty(element.options[element.selectedIndex]) && !_tools.empty(element.options[element.selectedIndex].value) )
-				formData.append(name, element.options[element.selectedIndex].value);
+					formData.append(name, element.options[element.selectedIndex].value);
 			} else if(tagName && tagName.toLowerCase() == "input" &&
-				 		element.type.toLowerCase() == "checkbox") {
-				
+				element.type.toLowerCase() == "checkbox") {
+
 				if(element.checked) formData.append(name, 1);
 			} else if(tagName && tagName.toLowerCase() == "input" &&
-				 		element.type.toLowerCase() == "file") {
-				
+				element.type.toLowerCase() == "file") {
+
 				for(var j = 0, k = element.files.length; j < k; j++) {
 					formData.append(name + '[]', element.files[j]);
 				}
