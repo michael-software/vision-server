@@ -720,6 +720,28 @@ namespace JUI {
 		}
 	}
 
+	class AutoInput extends InputView {
+
+		function __construct($pName) {
+			$this->element['type'] = 'autoinput';
+			parent::__construct($pName);
+		}
+
+		function setPredefined($predefined) {
+			if(is_array($predefined)) {
+				$this->element['predefined'] = $predefined;
+			}
+		}
+
+		function setValue($value) {
+			if(is_array($value)) {
+				$this->element['value'] = $value;
+			} else if(is_string($value)) {
+				$this->element['value'] = array($value);
+			}
+		}
+	}
+
 	class Editor extends InputView {
 		function __construct($pName) {
 			$this->element['type'] = 'editor';
