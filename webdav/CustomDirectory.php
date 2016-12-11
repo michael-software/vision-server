@@ -26,7 +26,7 @@ class MyDirectory extends DAV\Collection {
 	$this->updateUserDir();
 
     $children = array();
-    // Loop through the directory, and create objects for each node
+    // Loop through the directory, and create objects for each node 
     foreach(scandir($this->userDir) as $node) {
 
       // Ignoring files staring with .
