@@ -38,7 +38,7 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
 			text-align: right;
 		}
 		
-		#menu, #flyover, #overlay-invisible {
+		#menu, #flyover, #overlay-invisible, .editor-frame {
 			display: none;
 		}
 		
@@ -942,6 +942,8 @@ if ( (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off' ) && !empty($_POST
         
         <div id="share-button">
         </div>
+
+		<iframe class="editor-frame"></iframe>
         
         <noscript>
         	<div class="right"><img src="images/vision_icon.png"></div>
