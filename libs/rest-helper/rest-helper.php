@@ -1,5 +1,14 @@
 <?php
 
+function getHost($url) {
+    return parse_url ( $url, PHP_URL_HOST );
+}
+
+function getPort($url) {
+    return parse_url ( $url, PHP_URL_PORT );
+}
+
+
 function httpRequest($host, $port, $method, $path, $params=null) {
     // Params are a map from names to values
     $paramStr = "";
