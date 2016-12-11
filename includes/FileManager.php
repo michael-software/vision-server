@@ -9,6 +9,7 @@ class FileManager {
 	private $pluginFiles;
 	private $plugin = '.';
 	private $secure = true;
+    private $tags = null;
 	
 	const FILESYSTEM_PLUGIN_PRIVATE = "PLUGIN_PRIVATE";
 	const FILESYSTEM_PLUGIN_PUBLIC = "PLUGIN_PUBLIC";
@@ -69,6 +70,120 @@ class FileManager {
 			mkdir($this->userInfo.$pPlugin.'/', 0744, true);
 		}
 	}
+
+	function getTag($id) {
+        $tags = $this->getTags(true);
+
+        foreach ($tags as $tag) {
+            if($tag['id'] == $id) return $tag;
+        }
+
+        return null;
+    }
+
+	function getTagsForFile($path) {
+        $shareDatabaseManager = new DatabaseManager();
+        $shareDatabaseManager->openTable('tags_file', json_decode(DatabaseManager::$table14));
+
+        $statement = array("path"=>array("value"=>strtolower($path), "type"=>"s"));
+
+        $tagIdArray = explode(',', $shareDatabaseManager->getValues($statement, 1)['tags']);
+
+        $tagsArray = array();
+
+        if(is_array($tagIdArray))
+        foreach ($tagIdArray as $tagId) {
+            $objTag = $this->getTag($tagId);
+
+            if(!empty($objTag)) {
+                $tagsArray[] = $objTag;
+            }
+        }
+
+        return $tagsArray;
+    }
+
+	function getTags($allTags=false, $forceRefresh=false) {
+        global $loginManager;
+
+        if(empty($this->tags) || $forceRefresh) {
+            $shareDatabaseManager = new DatabaseManager();
+            $shareDatabaseManager->openTable('tags', json_decode(DatabaseManager::$table13));
+            $result = $shareDatabaseManager->getValues();
+
+            $this->tags = $result;
+        }
+
+        return $this->tags;
+    }
+
+    function tagExists($pTag) {
+        $tags = $this->getTags();
+
+        if(is_array($tags))
+        foreach($tags as $tag) {
+            if($tag['name'] == $pTag) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function getTagId($name) {
+        $tags = $this->getTags();
+
+        if(is_array($tags))
+            foreach($tags as $tag) {
+                if($tag['name'] == $name) {
+                    return $tag['id'];
+                }
+            }
+
+        return null;
+    }
+
+    function createTag($name) {
+        global $pluginManager;
+
+        $shareDatabaseManager = new DatabaseManager();
+        $shareDatabaseManager->openTable('tags', json_decode(DatabaseManager::$table13));
+        return $shareDatabaseManager->insertValue(  array( "name"=>array("value"=>$name, "type"=>"s") )  );
+    }
+
+
+    function setTags($file, $tags) {
+        global $loginManager, $pluginManager;
+
+
+        foreach ($tags as $tag) {
+            if(!$this->tagExists($tag)) {
+                $this->createTag($tag);
+            }
+        }
+
+
+        $currentTags = $this->getTags(false, true);
+
+        $tagArray = array();
+        foreach ($tags as $tag) {
+            $tagId = $this->getTagId($tag);
+
+            if(!empty($tagId)) {
+                $tagArray[] = $tagId;
+            }
+        }
+
+
+        $shareDatabaseManager = new DatabaseManager();
+        $shareDatabaseManager->openTable('tags_file', json_decode(DatabaseManager::$table14));
+
+        $insert = array("path"=>array("value"=>strtolower($file), "type"=>"s"), "tags"=>implode(',', $tagArray), "plugin_id"=>array("value"=>$pluginManager->getPluginName(),"type"=>"s"));
+        $statement = array("path"=>array("value"=>strtolower($file), "type"=>"s"));
+
+        return $shareDatabaseManager->insertOrUpdateValue($insert, $statement);
+
+    }
 	
 	function getFolder($pPath, $type=FileManager::FILESYSTEM_PRIVATE) {
 		$returnFolder = array();
