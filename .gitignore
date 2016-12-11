@@ -66,3 +66,12 @@ wolserver/
 webdav2/SabreDAV/
 .idea/
 scripts/output.js.map
+data/
+phpmyadmin/
+staRTF/
+phpinfo.php
+usergroups.txt
+config.php
+config_backup.php
+remote.php
+includes/UpdaterClient.php
