@@ -59,7 +59,7 @@ class LoginManager {
 	public function __construct() {
 		$this->jwtManager = new JwtManager();
 
-		$this->secure(); // secure the c
+		$this->secure(); // secure the component
 		
 		$json = json_decode(DatabaseManager::$table1);
 		
@@ -106,6 +106,12 @@ class LoginManager {
 			return $this->user['jwt'];
 		}
 	}
+
+	function setUserId($userid) {
+        if(constant('WEBSOCKET') == 1) {
+            $this->user['id'] = $userid;
+        }
+    }
 
 	function needRevalidation() {
 		return $this->revalidate || $this->updateJwt;
@@ -187,7 +193,7 @@ class LoginManager {
 	function getUserList() {
 		$pReturn = $this->databaseManager->getValues();
 		
-		$userList;
+		$userList = [];
 		
 		for($i = 0, $x = count($pReturn); $i < $x; $i++) {
 			$pReturn[$i]['digesta1'] = md5($pReturn[$i]['digesta1']);
