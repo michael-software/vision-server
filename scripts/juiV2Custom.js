@@ -22,6 +22,7 @@ function GuiPage() {
 
 		window.jui.registerCustomElement('buttonlist', window.buttonlist,'bl');
 		window.jui.registerCustomElement('editor', window.editor,'ed');
+		window.jui.registerCustomElement('autoinput', window.autoinput,'ai');
 
 		window.jui.action.addAction('openPlugin', openPlugin);
 		window.jui.action.addAction('openMedia', openMedia);
@@ -236,6 +237,57 @@ window.buttonlist = (function (jsonObject) {
 });
 
 
+window.externalEditor = function(domElement) {
+	var messageQueue = [];
+    var _this = this;
+    var loaded = false;
+	var _iframe = null;
+
+	this.init = function(domElement) {
+        _iframe = document.createElement('iframe');
+        _iframe.src = document.location.origin + '/editor/index.html';
+        _iframe.style.height = '500px';
+        _iframe.style.width = '100%';
+        _iframe.style.border = 'none';
+        _iframe.style.outline = 'none';
+
+		if(domElement && {}.toString.call(domElement.appendChild) === '[object Function]') {
+            domElement.appendChild(_iframe);
+        }
+
+        _iframe.addEventListener('load', function() {
+			loaded = true;
+
+			for(var i = 0, x = messageQueue.length; i < x; i++) {
+                _this.postMessage(messageQueue[i]);
+			}
+		}, false);
+	};
+
+	this.postMessage = function(data) {
+		if(loaded) {
+            _iframe.contentWindow.postMessage(JSON.stringify(data), window.location.origin);
+		} else {
+			messageQueue.push(data);
+		}
+	};
+
+	this.disableFiles = function() {
+		if(_iframe) {
+            this.postMessage({
+				action: 'updateConfig',
+				value: {
+					menu: {
+						file: false
+					}
+				}
+			});
+		}
+	};
+
+    this.init(domElement);
+};
+
 
 window.editor = (function(pJson) {
 	var _this = window.editor;
@@ -249,7 +301,11 @@ window.editor = (function(pJson) {
 	var contentArea = document.createElement('div');
 		contentArea.name = pJson['name'];
 		contentArea.className = 'html';
-	
+
+
+    var container = document.createElement('div');
+		var editor = new window.externalEditor(container);
+			editor.disableFiles();
 	
 	var Editor = function(pJson) {
 		createControls();
@@ -257,7 +313,7 @@ window.editor = (function(pJson) {
 		
 		return {
 			getDomElement: function() {
-				var element =  outer;
+				var element =  container;
 					element.appendChild(control);
 					element.appendChild(contentArea);
 
