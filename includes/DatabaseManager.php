@@ -22,6 +22,8 @@
 		public static $table10 = '[{"type":"int","name":"id"},{"type":"varchar","name":"name","default":""},{"type":"text","name":"value"},{"type":"varchar","name":"plugin","default":""}]'; // PluginStorage table
 		public static $table11  = '[{"type":"int","name":"id"},{"type":"varchar","name":"name"},{"type":"varchar","name":"signature"},{"type":"int","name":"user"},{"type":"int","name":"refused","default":"0"},{"type":"timestamp","name":"timestamp","default":"current_timestamp"}]'; // JWT Tokens
 		public static $table12  = '[{"type":"int","name":"id"},{"type":"text","name":"key"},{"type":"varchar","name":"plugin"},{"type":"int","name":"user"}]'; // Keys
+        public static $table13  = '[{"type":"int","name":"id"},{"type":"text","name":"name"},{"type":"int","name":"visible","default":0}]'; // Tags
+        public static $table14  = '[{"type":"int","name":"id"},{"type":"text","name":"path"},{"type":"text","name":"tags","default":""},{"type":"text","name":"plugin_id","default":""}]'; // FileTags
 
 
 		function __construct() 
@@ -50,6 +52,10 @@
 			if(is_string($json)) {
 				$json = json_decode($json);
 			}
+
+			if(empty($json)) {
+                return false;
+            }
 			
 			$query = 'CREATE TABLE IF NOT EXISTS `' . $this->table . '` ( ';
 			
