@@ -32,6 +32,12 @@ if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManag
 }
 
 if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManager()->getParameter()->allowCreate === TRUE) {
+	$taggingMode = new JUI\Button('TaggingMode');
+	$taggingMode->setClick( new JUI\Click( JUI\Click::openPlugin, $pluginManager, 'tagging', $folder ) );
+	$jUI->add( $taggingMode );
+}
+
+if(!$loginManager->getShareManager()->isShared() || $loginManager->getShareManager()->getParameter()->allowCreate === TRUE) {
 	if($pluginManager->getTemporary('showHidden', false)) {
 		$showHidden = new JUI\Button('Versteckte ausblenden');
 	} else {
