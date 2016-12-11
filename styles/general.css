@@ -317,13 +317,6 @@ ul.jui__list li:last-child {
 
 
 .image-box {
-	background-color: #FFFFFF;
-
-	box-shadow: 0 0 8px #444444;
-}
-
-
-.image-box {
 	position: relative;
 
 	background-color: #FFFFFF;
@@ -760,4 +753,15 @@ input[type=range]:focus::-ms-fill-upper {
 
 .editor .html u {
 	text-decoration: underline;
+}
+
+.editor-frame {
+	position: fixed;
+
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+
+	background-color: #E8E8E8;
 }

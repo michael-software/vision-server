@@ -117,4 +117,8 @@
 	input[type=color] {
 		width: 100% !important;
 	}
+
+	.editor-frame {
+		bottom: 75px;
+	}
 }

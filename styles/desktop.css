@@ -142,5 +142,9 @@
 	.menu-icon, .menu-icon-color {
 		max-width: 60px;
 	}
+
+	.editor-frame {
+		left: 125px;
+	}
 	
 }
