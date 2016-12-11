@@ -229,7 +229,9 @@ class FileManager {
 				return "image";
 			} else if($extension == "TXT") {
 				return "text";
-			} else if($extension == "TMPDL") {
+			} else if($extension == "HTML" || $extension == "HTM") {
+                return "html";
+            } else if($extension == "TMPDL") {
 				return "tmpdl";
 			}
 		}
@@ -271,7 +273,8 @@ class FileManager {
 					die('noright');
 				}
 			}
-			
+
+
 			if(is_dir($path)) {
 				ini_set("max_execution_time", 300);
 				
@@ -291,7 +294,17 @@ class FileManager {
 			}
 			
 			if(file_exists($path)) {
-				if($filetype == "music") {
+                if($filetype == "text" || $filetype == "html") {
+                    if($_SERVER['REQUEST_METHOD'] == 'GET') {
+                        header('Content-Type: text/plain');
+                        header('Content-Transfer-Encoding: Binary');
+                        header('Content-disposition: attachment; filename="' . basename($path) . '"');
+                        readfile($path);
+                    } else if($_SERVER['REQUEST_METHOD'] == 'PUT') {
+                        $entityBody = file_get_contents('php://input');
+                        file_put_contents($path, $entityBody);
+                    }
+                } else if($filetype == "music") {
 					header('Content-Disposition: inline; filename="'.basename($path).'"');
 					header("Content-type: audio/mpeg");
 					header("Content-Transfer-Encoding: binary"); 
