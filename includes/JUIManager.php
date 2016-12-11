@@ -853,10 +853,22 @@ namespace JUI {
 			$this->setText($text);
 		}
 
+		private function __construct2($text, $html) {
+			if(is_bool($html) && $html) {
+				$this->setHtml($text);
+			} else {
+				$this->setText($text);
+			}
+		}
+
 		function setText($text) {
 			$allowed = array('&#039;');
 			$replace = array('\'');
 			$this->element['value'] = str_replace($allowed, $replace, htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
+		}
+
+		function setHtml($value) {
+			$this->element['value'] = $value;
 		}
 
 		function setAlignment($alignment) {
