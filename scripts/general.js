@@ -18,10 +18,13 @@ var searchOverlay, searchBox;
 var dragOverBox = false;
 var dragTimeout;
 
+var editorFrame;
+
 var gui = null;
 var shareableId = [];
 
 var loadingTimeout;
+
 var galleryIndex;
 
 var isMobile = false;
@@ -32,10 +35,10 @@ window.onhashchange = function () {
 	hashChanged(getHash());
 };
 
-window.onresize = function () {
+window.addEventListener('resize', function () {
 	resizeAudio();
 	proofMobile();
-};
+});
 
 function proofMobile() {
 	var width = window.innerWidth;
@@ -372,6 +375,11 @@ function hideLoadingScreen() {
 }
 
 function openPlugin(pName, pView, pPage, noHistory) {
+	if(editorFrame) {
+		document.body.style.overflow = 'auto';
+		editorFrame.style.display = 'none';
+	}
+
 	if((pView == null || pView == '') && (pPage == null || pPage == '')) {
 		var newHash = pName;
 	} else if(pView != null && pPage == null) {
@@ -379,7 +387,7 @@ function openPlugin(pName, pView, pPage, noHistory) {
 	} else if(pView != null && pPage != null) {
 		var newHash = pName+'/'+pView+'/'+pPage;
 	}
-	
+
 	if(pName == 'webinterface' && pView == 'share' && pPage != null) {
 	    var formData = new FormData();    // Anlegen eines FormData Objekts zum Versenden unserer Datei
 	    formData.append('data[]', filelist[0]);  // Anhängen der Datei an das Objekt
@@ -436,9 +444,119 @@ function openMedia(pType, pUrl) {
 		downloadFile(pUrl);
 	} else if(pType == "image") {
 		openImage(pUrl);
+	} else if(pType == "text" || pType == "html") {
+		openText(pUrl, pType);
 	} else {
 		downloadFile(pUrl);
 	}
+}
+
+function openText(pUrl, pType) {
+	var fileUrl = window.location.origin + '/api/file.php?file='+encodeURIComponent(pUrl)+'&jwt=' + encodeURIComponent(window.token);
+
+	var mime = 'text/plain';
+	if(pType == 'html') {
+		mime = 'text/html';
+	}
+
+	var obj = {
+		'action': 'open',
+		'value': fileUrl,
+		'mime': mime
+	};
+
+	if(!editorFrame) {
+		editorFrame = document.querySelector(".editor-frame");
+		editorFrame.src = 'editor/index.html';
+		//editorFrame.src = 'http://127.0.0.1:8080/';
+
+		editorFrame.onload = function () {
+			editorFrame.contentWindow.postMessage(JSON.stringify(obj), "*");
+			editorFrame.focus();
+		};
+
+		window.addEventListener('resize', function() {
+			var clientHeight = document.body.clientHeight;
+			var clientWidth = document.body.clientWidth;
+
+			if(!isMobile) {
+				editorFrame.style.width = (clientWidth - 125) + 'px';
+				editorFrame.style.height = clientHeight + 'px';
+			} else {
+				editorFrame.style.width = clientWidth + 'px';
+				editorFrame.style.height = (clientHeight-75) + 'px';
+			}
+
+			editorFrame.focus();
+		}, false);
+
+		if(!isMobile) {
+			editorFrame.style.width = (document.body.clientWidth - 125) + 'px';
+			editorFrame.style.height = document.body.clientHeight + 'px';
+		} else {
+			editorFrame.style.width = document.body.clientWidth + 'px';
+			editorFrame.style.height = (document.body.clientHeight-75) + 'px';
+		}
+	} else {
+		editorFrame.focus();
+		editorFrame.contentWindow.postMessage(JSON.stringify(obj), "*");
+	}
+
+
+	window.onmessage = function receiveMessage(event) {
+		// Do we trust the sender of this message?
+		if (event.origin === "http://example.com:8080")
+			return;
+
+		try {
+			var data = JSON.parse(event.data);
+
+			switch (data.action) {
+				case 'save':
+					saveText(pUrl, data.value);
+					break;
+				default:
+					console.error('action not found', data.action);
+					break;
+			}
+		} catch(ex) {
+			console.error('Error while parsing message', ex);
+		}
+	};
+
+	document.body.style.overflow = 'hidden';
+	editorFrame.style.display = 'block';
+
+
+}
+
+function closeEditor() {
+	if(editorFrame) {
+		document.body.style.overflow = 'auto';
+		editorFrame.style.display = 'none';
+	}
+}
+
+function saveText(pUrl, pValue) {
+	var fileUrl = window.location.origin + '/api/file.php?file='+encodeURIComponent(pUrl);
+
+	showLoadingData();
+
+	var xhr = new XMLHttpRequest();
+	xhr.withCredentials = true;
+
+	xhr.addEventListener("readystatechange", function () {
+		if (this.readyState === 4) {
+			closeEditor();
+		}
+
+		hideLoadingData();
+	});
+
+	xhr.open("PUT", fileUrl);
+	xhr.setRequestHeader("authorization", "bearer " + window.token);
+
+	xhr.send(pValue);
 }
 
 function openImage(pUrl) {
@@ -650,6 +768,7 @@ function musicTimeUpdate() {
 }
 
 function openGallery(gallery, index) {
+	console.log(gallery, index);
 	var header = gui.getJuiHeader();
 
 	if(gallery && header && header[gallery] && window.jui.tools.isArray(header[gallery]) && header[gallery].length > 0) {
@@ -714,6 +833,8 @@ function galleryLast(galleryArray, image, next, last) {
 	}
 
 	galleryIndex--;
+
+	console.log(galleryIndex);
 
 	var pUrl = galleryArray[galleryIndex];
 
