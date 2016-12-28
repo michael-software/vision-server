@@ -7,8 +7,24 @@ if(!empty($_GET['query'])) {
 	
 	$searchManager = new SearchManager();
 	$array = $searchManager->getArray($_GET['query']);
-	
-	if(!empty($array) && $array != null) {
+
+
+    if(!empty($_GET['format']) && $_GET['format'] == 'jui') {
+        $jUI = new JUI\Manager();
+
+
+        $list = new JUI\ListView();
+
+        for($i = 0, $z = count($array); $i < $z; $i++) {
+            $entry = $array[$i];
+
+            $list->addItem($entry['title'], $entry['click']);
+        }
+
+        $jUI->add($list);
+
+        echo $jUI->getJsonString();
+    } else if(!empty($array) && $array != null) {
 		echo json_encode($array);
 	}
 }
