@@ -56,11 +56,11 @@ function GuiPage() {
 
 	this.requestParse = function (url, callback) {
 		window.jui.requestParse(url, null, null, callback);
-	}
+	};
 
 	this.getJuiHeader = function() {
 		return _juiHead;
-	}
+	};
 	
 	
 	function setHeaders() {
