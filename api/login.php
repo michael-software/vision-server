@@ -52,6 +52,8 @@ if(!empty($_POST['key']) AND !empty($_POST['iv']) AND !empty($_POST['username'])
         $bgcolor = $loginManager->getUserPreference("bgcolor", null);
         if(empty($bgcolor)) $bgcolor = $conf['bgcolor'];
         $output['bgcolor'] = $bgcolor;
+
+        $output['id'] = $loginManager->getId();
         
         echo json_encode($output);
     }
@@ -71,6 +73,7 @@ if(!empty($_POST['key']) AND !empty($_POST['iv']) AND !empty($_POST['username'])
         
         echo '{"token":' . json_encode($authtoken) . ',"username":"' . $_POST['username'] . '",';
         echo '"mainplugins":' . $pluginManager->getMainPlugins(); /* TODO */
+        echo ',"id":' . $loginManager->getId();
         
         
         if(!$loginManager->getShareManager()->isShared()) {
@@ -115,6 +118,8 @@ if(!empty($_POST['key']) AND !empty($_POST['iv']) AND !empty($_POST['username'])
         $bgcolor = $loginManager->getUserPreference("bgcolor", null);
         if(empty($bgcolor)) $bgcolor = $conf['bgcolor'];
         echo ',"bgcolor":' . json_encode($bgcolor);
+
+        echo ',"id":' . $loginManager->getId();
         
         if(!$loginManager->getShareManager()->isShared()) {
             $seamless = $loginManager->getUserPreference("seamless");
