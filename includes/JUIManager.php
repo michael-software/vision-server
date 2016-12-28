@@ -558,6 +558,8 @@ namespace JUI {
 
 			if($click instanceof Click) {
 				$this->element['click'][] = $click->getClickString();
+			} else if(is_string($click)) {
+				$this->element['click'][] = $click;
 			} else {
 				$this->element['click'][] = '';
 			}
