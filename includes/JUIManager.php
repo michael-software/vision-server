@@ -572,12 +572,16 @@ namespace JUI {
 
 			if($click instanceof Click) {
 				$this->element['click'][] = $click->getClickString();
+			} else if(is_string($click)) {
+				$this->element['click'][] = $click;
 			} else {
 				$this->element['click'][] = '';
 			}
 
 			if($longclick instanceof Click) {
 				$this->element['longclick'][] = $longclick->getClickString();
+			} else if(is_string($longclick)) {
+				$this->element['longclick'][] = $longclick;
 			} else {
 				$this->element['longclick'][] = '';
 			}
