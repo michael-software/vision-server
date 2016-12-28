@@ -815,11 +815,11 @@ function openGallery(gallery, index) {
 
 		next.onclick = function() {
 			galleryNext(galleryArray, image, next, last);
-		}
+		};
 
 		last.onclick = function() {
 			galleryLast(galleryArray, image, next, last);
-		}
+		};
 
 		
 		overlay.setOverlayContent(imageBox);
