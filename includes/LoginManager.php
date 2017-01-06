@@ -151,7 +151,12 @@ class LoginManager {
 
 			$_SESSION['id'] = $data->sub;
 			$this->user['id'] = $data->sub;
-			$this->user['username'] = $data->name;
+
+			if(!empty($data->name))
+			    $this->user['username'] = $data->name;
+            else if(!empty($data->username))
+                $this->user['username'] = $data->username;
+
 			$this->user['jwt'] = $jwtRequest;
 
 			if(!empty($data->_sek)) {
@@ -178,7 +183,12 @@ class LoginManager {
 
 			$_SESSION['id'] = $data->sub;
 			$this->user['id'] = $data->sub;
-			$this->user['username'] = $data->name;
+
+            if(!empty($data->name))
+                $this->user['username'] = $data->name;
+            else if(!empty($data->username))
+                $this->user['username'] = $data->username;
+
 			$this->user['jwt'] = $jwtRequest;
 			$this->user['jwtId'] = $data->jti;
 
@@ -366,7 +376,13 @@ class LoginManager {
 
 			$_SESSION['id'] = $data->sub;
 			$this->user['id'] = $data->sub;
-			$this->user['username'] = $data->name;
+
+            if(!empty($data->name))
+                $this->user['username'] = $data->name;
+            else if(!empty($data->username))
+                $this->user['username'] = $data->username;
+
+
 			$this->user['jwt'] = $pToken;
 
 			if(!empty($data->_sek)) {
@@ -387,7 +403,12 @@ class LoginManager {
 
 			$_SESSION['id'] = $data->sub;
 			$this->user['id'] = $data->sub;
-			$this->user['username'] = $data->name;
+
+            if(!empty($data->name))
+                $this->user['username'] = $data->name;
+            else if(!empty($data->username))
+                $this->user['username'] = $data->username;
+
 			$this->user['jwt'] = $pToken;
 			$this->user['jwtId'] = $data->jti;
 
@@ -407,6 +428,11 @@ class LoginManager {
 
 	function loginUserByJwt($jwt) {
 		$data = $this->jwtManager->getJwtData($jwt);
+
+		if(!empty($data->username)) {
+		    $data->name = $data->username;
+        }
+
 		$validate = $this->jwtManager->validateJwt($jwt, $this->secret);
 		if($validate == 1 || $validate == 2) {
 
