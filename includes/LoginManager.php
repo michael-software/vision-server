@@ -93,7 +93,19 @@ class LoginManager {
 				$data = $this->jwtManager->getJwtData($jwtRequest);
 
 				if(!empty($data->sub) && $this->jwtManager->validateJwt($jwtRequest, $this->secret) == 2) {
-					$jwt = $this->jwtManager->createJwt($data->name, $data->_sek, $this->secret, array('sub'=>$data->sub, 'jti'=>$data->jti), 60);
+				    $jti = null;
+				    if(!empty($data->jti)) $jti = $data->jti;
+
+                    $_sek = null;
+                    if(!empty($data->_sek)) $_sek = $data->_sek;
+
+                    $name = null;
+                    if(!empty($data->name)) $name = $data->name; else if(!empty($data->username)) $name = $data->username;
+
+                    $server = null;
+                    if(!empty($data->aud)) $server = $data->aud;
+
+					$jwt = $this->jwtManager->createJwt($name, $_sek, $this->secret, array('sub'=>$data->sub, 'jti'=>$jti, 'aud'=>$server), 60);
 					$jwtSignature = $this->jwtManager->getSignature($jwt);
 
 					$this->addJwtSignature($jwtSignature, $name='Endgerät', $data->sub);
@@ -229,7 +241,7 @@ class LoginManager {
 	    return $min + $rnd;
 	}
 
-	function getSecurityToken($name='Endgerät', $pUsername, $pPassword, $userid) {
+	function getSecurityToken($name='Endgerät', $pUsername, $pPassword, $userid, $server=null) {
 		/*
 		$length = 64;
 	    $token = "";
@@ -244,7 +256,7 @@ class LoginManager {
 		require_once dirname(__FILE__) . '/CryptManager.php';
 
 		$jwtManager = new JwtManager();
-		$token = $jwtManager->createJwt($pUsername, hash('sha512', $pPassword), $this->secret, array('sub'=>$userid), 60);
+		$token = $jwtManager->createJwt($pUsername, hash('sha512', $pPassword), $this->secret, array('sub'=>$userid, 'aud'=>$server), 60);
 		
 		$this->addSecurityToken($token, $name);
 		$this->addJwtSignature($jwtManager->getSignature($token), $name, $userid);

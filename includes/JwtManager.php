@@ -53,9 +53,8 @@ class JwtManager {
 		
 		$header = $this->jwtEncode($this->getHeader());
 
-
 		$payload['exp'] = time() + $time*60;
-		$payload['name'] = $pUsername;
+		$payload['username'] = $pUsername;
 
         if(!empty($_sek))
 		    $payload['_sek'] = $_sek;
